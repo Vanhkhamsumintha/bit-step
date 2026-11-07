@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ລະບົບຕອບຄຳຖາມ 3D & ຈັດອັນດັບ</title>
+
+  <!-- Google Fonts - Phetsarath OT & Noto Sans Lao -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700;800&family=Phetsarath&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            lao: ['Phetsarath OT', 'Noto Sans Lao', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- MathJax JS for LaTeX math rendering -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)'], ['$', '$']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * {
+      font-family: 'Phetsarath OT', 'Noto Sans Lao', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+      color: #f8fafc;
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    /* 3D Button Effects */
+    .btn-3d {
+      transition: all 0.15s ease;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+      position: relative;
+      top: 0;
+    }
+    .btn-3d:hover {
+      top: -2px;
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3), 0 14px 20px -3px rgba(0, 0, 0, 0.4);
+    }
+    .btn-3d:active {
+      top: 4px;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-3d-green {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-bottom: 4px solid #15803d;
+    }
+    .btn-3d-blue {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border-bottom: 4px solid #1d4ed8;
+    }
+    .btn-3d-purple {
+      background: linear-gradient(135deg, #a855f7, #9333ea);
+      border-bottom: 4px solid #7e22ce;
+    }
+    .btn-3d-amber {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-bottom: 4px solid #b45309;
+    }
+    .btn-3d-rose {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      border-bottom: 4px solid #be123c;
+    }
+    .btn-3d-indigo {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border-bottom: 4px solid #3730a3;
+    }
+
+    /* Choice Green Highlight Active State */
+    .choice-selected {
+      background: linear-gradient(135deg, #15803d, #166534) !important;
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 20px rgba(74, 222, 128, 0.5), inset 0 0 10px rgba(74, 222, 128, 0.3) !important;
+      transform: scale(1.01);
+    }
+
+    /* Glossy 3D Cards */
+    .card-3d {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+
+    .custom-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .custom-modal.show {
+      display: flex;
+      animation: modalFade 0.25s ease;
+    }
+
+    .custom-modal-box {
+      width: 100%;
+      max-width: 380px;
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid rgba(129, 140, 248, 0.4);
+      border-radius: 24px;
+      padding: 28px 22px;
+      text-align: center;
+      color: white;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+      animation: modalPop 0.25s ease;
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .custom-modal-box h2 {
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .custom-modal-box p {
+      color: #cbd5e1;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @keyframes modalFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .question-box-fixed {
+      width: 100%;
+      max-width: 1150px;
+      padding: 24px;
+      font-size: 34px;
+      color: #fef08a;
+      background-color: #07111f;
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      border-radius: 20px;
+      text-align: center;
+      margin: 0 auto;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+      box-sizing: border-box;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+
+    .choice-btn-fixed {
+      width: 100%;
+      text-align: left;
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: #0f172a;
+      border: 2px solid #334155;
+      font-weight: 700;
+font-size: 32px;
+      color: white;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: between;
+      gap: 5px;
+    }
+    .choice-btn-fixed:hover {
+      border-color: #6366f1;
+      background: #1e293b;
+    }
+
+    #wrong-report-list mjx-container,
+    #wrong-report-detail mjx-container,
+    .question-box-fixed mjx-container,
+    .choice-btn-fixed mjx-container {
+      display: inline-block;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      vertical-align: middle;
+    }
+
+    .json-content-view {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      margin: 8px 0;
+      text-align: left;
+      border: 1px solid rgba(148,163,184,.28);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #07111f;
+    }
+    .json-content-view .json-content-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      color: #a5b4fc;
+      background: rgba(99,102,241,.12);
+      border-bottom: 1px solid rgba(148,163,184,.2);
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .json-content-view pre {
+      margin: 0;
+      padding: 12px;
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: pre;
+      tab-size: 2;
+      color: #e2e8f0;
+      font: 500 13px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .json-key { color: #93c5fd; }
+    .json-string { color: #86efac; }
+    .json-number { color: #fcd34d; }
+    .json-boolean { color: #c4b5fd; }
+    .json-null { color: #f9a8d4; }
+    .json-punctuation { color: #94a3b8; }
+
+    .wrong-report-row { background: rgba(15, 23, 42, .78); border: 1px solid rgba(148,163,184,.18); }
+    .wrong-report-correct { background: linear-gradient(135deg, #15803d, #166534) !important; border: 2px solid #4ade80 !important; color: #fff !important; }
+    .wrong-report-recent { background: linear-gradient(135deg, rgba(21,128,61,.38), rgba(22,101,52,.28)) !important; border: 1px solid #4ade80 !important; }
+/* ຊ່ອນແຖບ Scrollbar ຂອງເລກຂໍ້ 1-30 */
+/* ลดความสูงตารางเลขข้อ 1-30 */
+#question-palette-grid {
+    padding: 4px !important;
+    gap: 4px !important;
+    align-content: start;
+}
+
+/* ลดความสูงของปุ่มตัวเลข */
+#question-palette-grid button {
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 3px !important;
+    line-height: 1 !important;
+    font-size: 14px !important;
+}
+
+#question-palette-grid::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+/* ปรับปุ่มในหน้าต่างยืนยัน */
+.modal-buttons {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+}
+
+.modal-buttons button {
+    flex: 1;
+    min-height: 40px;
+    padding: 10px 14px !important;
+    border-radius: 14px !important;
+    border: 1px solid transparent !important;
+    font-size: 15px;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+}
+
+/* ປຸ່ມຢູ່ໜ້ານີ້ */
+#modal-cancel {
+    background: linear-gradient(135deg, #64748b, #475569) !important;
+    border-bottom: 4px solid #334155 !important;
+}
+
+/* ປຸ່ມກັບໄປ */
+#modal-ok {
+    background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+    border-bottom: 4px solid #3730a3 !important;
+}
+
+.modal-buttons button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.15);
+}
+
+.modal-buttons button:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+#modal-ok {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    border-bottom: 4px solid #15803d !important;
+}
+
+#modal-cancel {
+    background: linear-gradient(135deg, #64748b, #475569) !important;
+    border-bottom: 4px solid #334155 !important;
+}
+.modal-buttons {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    gap: 12px;
+}
+/* ขยายกรอบคำถามให้เกือบเต็มจอ */
+#screen-quiz {
+    width: 100%;
+    max-width: none !important;
+}
+
+/* กรอบใหญ่ที่ครอบโจทย์และตัวเลือก */
+#screen-quiz > .card-3d {
+    width: 100%;
+    max-width: none;
+}
+
+/* กรอบแสดงโจทย์ */
+.question-box-fixed {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 28px 32px;
+    box-sizing: border-box;
+}
+
+/* กรอบตัวเลือก */
+.choice-btn-fixed {
+    width: 100% !important;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 18px 24px;
+}
+
+/* ขยายพื้นที่ตัวเลือก */
+#choices-container {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+/* หน้าจอมือถือให้เรียงตัวเลือกลงมา */
+@media (max-width: 640px) {
+    #choices-container {
+        grid-template-columns: 1fr;
+    }
+
+    .question-box-fixed {
+        padding: 16px;
+    }
+
+    .choice-btn-fixed {
+        padding: 14px 16px;
+    }
+}
+/* ขยายตัวหนังสือตัวเลือกคำตอบ */
+.choice-btn-fixed {
+    font-size: 23px !important;
+    font-weight: 800 !important;
+    line-height: 1.6 !important;
+}
+
+/* บังคับข้อความและองค์ประกอบลูกในปุ่ม */
+.choice-btn-fixed span,
+.choice-btn-fixed div,
+.choice-btn-fixed p {
+    font-size: 23px !important;
+    font-weight: 800 !important;
+    line-height: 1.6 !important;
+}
+
+/* ขยายตัวเลข A B C D */
+.choice-btn-fixed .choice-label {
+    font-size: 23px !important;
+}
+  </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between overflow-x-hidden">
+
+  <!-- TOP BAR / HEADER -->
+  <header id="top-bar" class="w-full bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="app.showHome()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 font-bold text-xl">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-lg md:text-xl tracking-wide bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            ເກມຜ່ານລະດັບ
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="user-profile-badge" class="hidden flex items-center bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 rounded-full py-1.5 px-3 cursor-pointer transition" onclick="app.toggleProfileModal()">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center text-white text-xs font-bold mr-2 shadow">
+            <i class="fa-solid fa-user-astronaut"></i>
+          </div>
+          <div class="text-left pr-1">
+            <div id="header-user-name" class="text-sm font-bold text-amber-300 leading-tight">...</div>
+            <div id="header-user-level" class="text-[11px] text-slate-300">ລາວ: L1 | ຄະນິດ: L1 | ວິທ: L1</div>
+          </div>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-2"></i>
+        </div>
+
+        <button onclick="app.showLeaderboard()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-amber-400 font-bold text-sm flex items-center gap-2 transition">
+          <i class="fa-solid fa-trophy text-amber-400"></i>
+          <span class="hidden sm:inline">ຕາຕະລາງອັນດັບ</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+<main class="w-full max-w-[1800px] mx-auto px-3 md:px-5 flex-grow flex flex-col justify-center items-center my-4">
+    <!-- 1. HOME SCREEN -->
+    <section id="screen-home" class="w-full max-w-lg space-y-6">
+      <div class="card-3d rounded-3xl p-6 text-center border-t-2 border-indigo-500/40 relative overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="inline-flex p-4 rounded-2xl bg-indigo-900/50 text-indigo-400 mb-4 shadow-inner">
+          <i class="fa-solid fa-graduation-cap text-4xl"></i>
+        </div>
+        <h2 class="text-2xl font-black text-white mb-2">ເຂົ້າສູ່ລະບົບ</h2>
+        <div class="space-y-4">
+          <div class="relative">
+            <input type="text" id="input-student-id" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" placeholder="ປ້ອນລະຫັດນັກຮຽນ"
+              class="w-full bg-slate-950/80 border-2 border-indigo-500/40 focus:border-indigo-400 text-amber-300 font-extrabold text-center text-xl py-3.5 px-4 rounded-2xl outline-none transition shadow-inner placeholder:text-slate-500 placeholder:text-base placeholder:font-normal">
+          </div>
+
+          <button onclick="app.handleIdSubmit()" class="w-full btn-3d btn-3d-indigo text-white font-bold text-lg py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>ຕົກລົງ</span>
+          </button>
+        </div>
+
+        <div class="relative flex py-4 items-center">
+          <div class="flex-grow border-t border-slate-700"></div>
+          <span class="flex-shrink mx-4 text-slate-400 text-xs font-bold uppercase">ຫຼື</span>
+          <div class="flex-grow border-t border-slate-700"></div>
+        </div>
+
+        <button onclick="app.loginAsGuest()" class="w-full btn-3d btn-3d-purple text-white font-bold text-base py-3 px-6 rounded-2xl flex items-center justify-center gap-2">
+          <i class="fa-solid fa-user-ninja"></i>
+          <span>ເຂົ້າໃນຖານະແຂກ (Guest Login)</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. SUBJECT SELECTION SCREEN -->
+    <section id="screen-subjects" class="w-full max-w-3xl space-y-6 hidden">
+      <div class="text-center space-y-2">
+        <h2 class="text-3xl font-black text-white">ເລືອກວິຊາທີ່ຕ້ອງການຫຼິ້ນ</h2>
+        <p class="text-slate-400 text-sm">ແຕ່ລະວິຊາມີ 5 ລະດັບຄວາມຍາກ • 30 ຄຳຖາມ / ຄະນິດ 5 ນາທີ • ວິຊາອື່ນ 3 ນາທີ</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Subject 1: Lao -->
+        <div class="card-3d rounded-3xl p-6 flex flex-col justify-between hover:border-emerald-500/50 transition group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <h3 class="text-xl font-black text-white mb-1">ພາສາລາວ</h3>
+          </div>
+          <div>
+            <div class="bg-slate-950/60 rounded-xl p-2.5 mb-4 border border-slate-800 flex justify-between items-center text-xs">
+              <span class="text-slate-400">ລະດັບປັດຈຸບັນ:</span>
+              <span id="subj-level-lao" class="font-bold text-emerald-400">Level 1</span>
+            </div>
+            <button onclick="app.startQuiz('lao')" class="w-full btn-3d btn-3d-green text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2">
+              <i class="fa-solid fa-play"></i>
+              <span>ເລີ່ມເກມ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subject 2: Math -->
+        <div class="card-3d rounded-3xl p-6 flex flex-col justify-between hover:border-blue-500/50 transition group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-calculator"></i>
+            </div>
+            <h3 class="text-xl font-black text-white mb-1">ຄະນິດສາດ</h3>
+          </div>
+          <div>
+            <div class="bg-slate-950/60 rounded-xl p-2.5 mb-4 border border-slate-800 flex justify-between items-center text-xs">
+              <span class="text-slate-400">ລະດັບປັດຈຸບັນ:</span>
+              <span id="subj-level-math" class="font-bold text-blue-400">Level 1</span>
+            </div>
+            <button onclick="app.startQuiz('math')" class="w-full btn-3d btn-3d-blue text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2">
+              <i class="fa-solid fa-play"></i>
+              <span>ເລີ່ມເກມ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subject 3: Science -->
+        <div class="card-3d rounded-3xl p-6 flex flex-col justify-between hover:border-purple-500/50 transition group">
+          <div>
+            <div class="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-500/30 text-purple-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition">
+              <i class="fa-solid fa-flask"></i>
+            </div>
+            <h3 class="text-xl font-black text-white mb-1">ວິທະຍາສາດ</h3>
+          </div>
+          <div>
+            <div class="bg-slate-950/60 rounded-xl p-2.5 mb-4 border border-slate-800 flex justify-between items-center text-xs">
+              <span class="text-slate-400">ລະດັບປັດຈຸບັນ:</span>
+              <span id="subj-level-sci" class="font-bold text-purple-400">Level 1</span>
+            </div>
+            <button onclick="app.startQuiz('sci')" class="w-full btn-3d btn-3d-purple text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2">
+              <i class="fa-solid fa-play"></i>
+              <span>ເລີ່ມເກມ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. QUIZ SCREEN -->
+<section id="screen-quiz" class="w-full max-w-none space-y-6 hidden">
+      <div class="card-3d rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 border-t-2 border-indigo-500/50">
+        <div>
+          <span id="quiz-subject-badge" class="text-xs px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold uppercase">
+            ວິຊາ
+          </span>
+          <h4 id="quiz-level-indicator" class="text-xl font-black text-white mt-1">
+            ລະດັບທີ 1 / Level 1
+          </h4>
+        </div>
+
+        <!-- Timer Gauge -->
+        <div class="flex items-center gap-3 bg-slate-950/80 border border-amber-500/40 px-5 py-2.5 rounded-2xl shadow-lg">
+          <i class="fa-solid fa-stopwatch text-amber-400 text-2xl animate-pulse"></i>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">ເວລາທີ່ເຫຼືອ</div>
+            <div id="quiz-timer" class="text-2xl font-black text-amber-400 leading-none">03:00</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="text-right mr-2">
+            <div class="text-xs text-slate-400">ຂໍ້ທີ</div>
+            <div class="text-2xl font-black text-white">
+              <span id="current-q-num" class="text-indigo-400">1</span> <span class="text-slate-500 text-sm">/ 30</span>
+            </div>
+          </div>
+          <button onclick="app.showHomeConfirm()" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 text-xs font-bold transition" title="ໜ້າທຳອິດ">
+            <i class="fa-solid fa-house text-base"></i>
+          </button>
+          <button onclick="app.showSubjectConfirm()" class="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 text-xs font-bold transition" title="ໜ້າເລືອກວິຊາ">
+            <i class="fa-solid fa-list text-base"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-3d rounded-3xl p-6 md:p-10 relative border-t-4 border-indigo-500 shadow-2xl space-y-8">
+        <div class="question-box-fixed flex items-center justify-center min-h-[140px] shadow-inner relative overflow-hidden">
+          <div id="question-text" class="tracking-wide leading-relaxed">
+            ...
+          </div>
+        </div>
+
+        <!-- Multiple Choice Options -->
+        <div id="choices-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Options rendered dynamically -->
+        </div>
+
+        <!-- Submit Answers Button & Palette -->
+        <div class="pt-6 border-t border-slate-800/80 space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="text-xs font-bold text-slate-400 flex items-center gap-2">
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button onclick="app.prevQuestion()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+                <i class="fa-solid fa-chevron-left"></i>
+                <span>ຂໍ້ກ່ອນໜ້າ</span>
+              </button>
+              <button onclick="app.nextQuestion()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+                <span>ຂໍ້ຖັດໄປ</span>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+              <button onclick="app.submitQuiz()" class="btn-3d btn-3d-green text-white px-5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 ml-2">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>ສົ່ງຄຳຕອບ</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="question-palette-grid" class="grid grid-cols-6 sm:grid-cols-10 gap-2 p-3 bg-slate-950/80 border border-slate-800 rounded-2xl max-h-36 overflow-y-auto">
+            <!-- Rendered 1 to 30 buttons -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. LEADERBOARD SCREEN -->
+    <section id="screen-leaderboard" class="w-full max-w-3xl space-y-6 hidden">
+      <div class="card-3d rounded-3xl p-6 border-t-2 border-amber-500/40">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl border border-amber-500/30">
+              <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-black text-white">ຕາຕະລາງອັນດັບຜູ້ຫຼິ້ນ</h2>
+            </div>
+          </div>
+          <button onclick="app.showSubjects()" class="btn-3d btn-3d-blue text-xs font-bold py-2 px-4 rounded-xl flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>ກັບໜ້າວິຊາ</span>
+          </button>
+        </div>
+
+        <div class="flex border-b border-slate-800 gap-2 mb-4">
+          <button id="tab-btn-lao" onclick="app.switchLeaderboardTab('lao')" class="py-2.5 px-4 font-bold text-sm text-amber-400 border-b-2 border-amber-400 transition">
+            ພາສາລາວ
+          </button>
+          <button id="tab-btn-math" onclick="app.switchLeaderboardTab('math')" class="py-2.5 px-4 font-bold text-sm text-slate-400 hover:text-white border-b-2 border-transparent transition">
+            ຄະນິດສາດ
+          </button>
+          <button id="tab-btn-sci" onclick="app.switchLeaderboardTab('sci')" class="py-2.5 px-4 font-bold text-sm text-slate-400 hover:text-white border-b-2 border-transparent transition">
+            ວິທະຍາສາດ
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-950/70 border-b border-slate-800 text-slate-400 text-xs">
+                <th class="py-3 px-4">ອັນດັບ</th>
+                <th class="py-3 px-4">ລະຫັດ / ຊື່ນັກຮຽນ</th>
+                <th class="py-3 px-4 text-center">ລະດັບທີ່ຜ່ານ (Level)</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody" class="divide-y divide-slate-800">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WRONG ANSWER REPORT SCREEN -->
+    <section id="screen-wrong-report" class="w-full max-w-3xl space-y-6 hidden">
+      <div class="card-3d rounded-3xl p-5 md:p-6 border-t-2 border-rose-500/50">
+        <div class="flex items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-2xl font-black text-white">ລາຍງານຂໍ້ທີ່ຕອບຜິດ</h2>
+            <p id="wrong-report-user" class="text-xs text-slate-400 mt-1">...</p>
+          </div>
+          <button onclick="app.showSubjects()" class="btn-3d btn-3d-blue text-xs font-bold py-2 px-4 rounded-xl flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i><span>ກັບຄືນ</span>
+          </button>
+        </div>
+
+        <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-3 mb-4">
+          <button id="wrong-tab-lao" onclick="app.switchWrongReportTab('lao')" class="py-2 px-4 rounded-xl text-sm font-bold bg-emerald-600 text-white">ພາສາລາວ</button>
+          <button id="wrong-tab-math" onclick="app.switchWrongReportTab('math')" class="py-2 px-4 rounded-xl text-sm font-bold bg-slate-800 text-slate-300">ຄະນິດສາດ</button>
+          <button id="wrong-tab-sci" onclick="app.switchWrongReportTab('sci')" class="py-2 px-4 rounded-xl text-sm font-bold bg-slate-800 text-slate-300">ວິທະຍາສາດ</button>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <p class="text-xs text-slate-400">ລຽງຈາກຂໍ້ທີ່ຜິດຫຼາຍທີ່ສຸດ</p>
+          <span id="wrong-report-total" class="text-xs font-bold text-rose-300">0 ຂໍ້</span>
+        </div>
+        <div id="wrong-report-list" class="space-y-2">
+          <div class="text-center text-slate-400 py-8">ກຳລັງໂຫຼດ...</div>
+        </div>
+
+        <!-- WRONG REPORT DETAIL MODAL -->
+        <div id="wrong-report-detail" class="hidden fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-sm items-center justify-center p-3 md:p-6">
+          <div class="card-3d w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-4 md:p-6 border-t-4 border-emerald-500">
+            <div class="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 class="font-black text-xl text-amber-200">ລາຍລະອຽດຄຳຖາມ</h3>
+                <span id="wrong-detail-count" class="inline-block mt-2 text-xs rounded-full bg-rose-500/20 text-rose-300 px-3 py-1 font-bold"></span>
+              </div>
+              <button type="button" onclick="app.closeWrongReportDetail()" class="btn-3d btn-3d-rose rounded-xl px-4 py-2 text-sm font-bold text-white flex-shrink-0"><i class="fa-solid fa-xmark mr-1"></i>ປິດ</button>
+            </div>
+            
+            <div id="wrong-detail-question" class="text-lg md:text-xl font-bold text-white mb-5"></div>
+            <div id="wrong-detail-choices" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6"></div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+              <button onclick="app.prevWrongReport()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+                <i class="fa-solid fa-chevron-left"></i>
+                <span>ຂໍ້ກ່ອນໜ້າ</span>
+              </button>
+              <span id="wrong-detail-pagination-indicator" class="text-xs font-bold text-slate-400">1 / 1</span>
+              <button onclick="app.nextWrongReport()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+                <span>ຂໍ້ຖັດໄປ</span>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS -->
+  <div id="modal-login-confirm" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="card-3d max-w-md w-full rounded-3xl p-6 text-center space-y-5 border-t-4 border-indigo-500 shadow-2xl">
+      <div class="w-16 h-16 rounded-full bg-indigo-500/20 text-indigo-400 mx-auto flex items-center justify-center text-3xl border border-indigo-500/30">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+      <div>
+        <h3 class="text-slate-400 text-sm font-semibold mb-1">ຢືນຢັນຕົວຕົນນັກຮຽນ</h3>
+        <p id="confirm-student-name" class="text-xl font-black text-amber-300">
+          ຈະລົງຊື່ຜ່ານ... ແມ່ນບໍ?
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button onclick="app.cancelLoginModal()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl transition">
+          ຍ້ອນກັບ
+        </button>
+        <button onclick="app.confirmStudentLogin()" class="btn-3d btn-3d-green text-white font-bold py-3 px-4 rounded-2xl">
+          ຕົກລົງ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-profile" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="card-3d max-w-xs w-full rounded-3xl p-6 text-center space-y-4 border-t-4 border-purple-500">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 text-white mx-auto flex items-center justify-center text-3xl shadow-lg">
+        <i class="fa-solid fa-user-astronaut"></i>
+      </div>
+      <div>
+        <h3 id="modal-profile-name" class="text-lg font-black text-white">...</h3>
+        <p id="modal-profile-id" class="text-xs text-amber-400">ID: --</p>
+      </div>
+      <div class="bg-slate-950/70 rounded-2xl p-3 text-left space-y-1.5 text-xs text-slate-300 border border-slate-800">
+        <div class="flex justify-between">
+          <span>ພາສາລາວ:</span>
+          <span id="prof-lvl-lao" class="font-bold text-emerald-400">Level 1</span>
+        </div>
+        <div class="flex justify-between">
+          <span>ຄະນິດສາດ:</span>
+          <span id="prof-lvl-math" class="font-bold text-blue-400">Level 1</span>
+        </div>
+        <div class="flex justify-between">
+          <span>ວິທະຍາສາດ:</span>
+          <span id="prof-lvl-sci" class="font-bold text-purple-400">Level 1</span>
+        </div>
+      </div>
+      <div class="pt-2 flex flex-col gap-2">
+        <button id="btn-open-wrong-report" onclick="app.showWrongReport()" class="btn-3d btn-3d-amber text-white font-bold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-chart-column"></i>
+          <span>ລາຍງານຂໍ້ທີ່ຕອບຜິດ</span>
+        </button>
+        <button onclick="app.logout()" class="btn-3d btn-3d-rose text-white font-bold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>ອອກຈາກລະບົບ</span>
+        </button>
+        <button onclick="app.toggleProfileModal()" class="py-2 px-4 bg-slate-800 text-slate-400 text-xs rounded-xl font-bold">
+          ປິດ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="custom-confirm" class="custom-modal">
+    <div class="custom-modal-box">
+      <div class="modal-icon">❓</div>
+      <h2 id="modal-title">ຢືນຢັນການອອກ</h2>
+      <p id="modal-message"></p>
+      <div class="modal-buttons">
+        <button id="modal-cancel">ຍົກເລີກ</button>
+        <button id="modal-ok">ຢືນຢັນ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-gameover" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="card-3d max-w-md w-full rounded-3xl p-6 text-center space-y-5 border-t-4 border-rose-500">
+      <div class="w-20 h-20 rounded-full bg-rose-500/20 text-rose-500 mx-auto flex items-center justify-center text-4xl border border-rose-500/30">
+        <i class="fa-solid fa-hourglass-end"></i>
+      </div>
+      <div>
+        <h3 class="text-2xl font-black text-rose-400 mb-1">ລໍຖ້າຮອບຕໍ່ໄປ!</h3>
+        <p id="gameover-reason-text" class="text-slate-300 text-sm">ທ່ານຕອບຜິດ ຫຼື ເວລາເໝົດ</p>
+      </div>
+      <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+        <div class="text-xs text-slate-400 mb-1">ເວລາຄູລດາວ (Cooldown):</div>
+        <div id="cooldown-timer-display" class="text-3xl font-black text-amber-400">03:00</div>
+        <p class="text-[11px] text-slate-500 mt-1">ທ່ານຕ້ອງລໍຖ້າ 3 ນາທີ ຈຶ່ງຈະຫຼິ້ນໄດ້ອີກ</p>
+      </div>
+      <button onclick="app.closeGameOverModal()" class="w-full btn-3d btn-3d-blue text-white font-bold py-3 px-4 rounded-xl">
+        ຕົກລົງ / ກັບໜ້າເລືອກວິຊາ
+      </button>
+    </div>
+  </div>
+
+  <div id="modal-victory" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="card-3d max-w-md w-full rounded-3xl p-6 text-center space-y-5 border-t-4 border-emerald-500">
+      <div class="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-4xl border border-emerald-500/30 shadow-lg">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <div>
+        <h3 id="victory-title" class="text-2xl font-black text-emerald-400 mb-2">
+          ຍິນດີນຳເດີ້ ເຈົ້າຜ່ານລະດັບທີ 1 ໄດ້ສຳເລັດແລ້ວ!
+        </h3>
+        <p class="text-slate-300 text-sm">ເກັ່ງຫຼາຍ! ທ່ານຕອບຖືກທັງໝົດ 30 ຂໍ້</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button onclick="app.showSubjects()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl transition text-sm">
+          ໜ້າເລືອກວິຊາ
+        </button>
+        <button id="btn-next-level" onclick="app.nextLevelAction()" class="btn-3d btn-3d-green text-white font-bold py-3 px-4 rounded-2xl text-sm">
+          ລະດັບຖັດໄປ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE & APP SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getDatabase, ref, set, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA2bYEBYCVl7_5M6bvSS_4kEAgBKPjGsW8",
+      authDomain: "big-map-8d15b.firebaseapp.com",
+      databaseURL: "https://big-map-8d15b-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "big-map-8d15b",
+      storageBucket: "big-map-8d15b.appspot.com",
+      messagingSenderId: "785508601209",
+      appId: "1:785508601209:web:2409a1547b0a34de5cb3a8"
+    };
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    const db = getDatabase(firebaseApp);
+
+    const STUDENTS = {
+      1: "ທ້າວ ຈີລະກອນ ດວງດີ",
+      2: "ທ້າວ ຊິນນະພັດ ໄຊຍະວົງ",
+      3: "ທ້າວ ອານາວິນ ບຸນໄຊແສງ",
+      4: "ນາງ ພອນວິໄລ ພັນທະວົງ",
+      5: "ທ້າວ ສຸກທະວີ ແສງທະວີ",
+      6: "ນາງ ອານິສາ ເທບພະວົງ",
+      7: "ນາງ ທິບພາພອນ ນາມທະວີໄຊ",
+      8: "ນາງ ສຸພາວະດີ ໃຈອີ່ສານ",
+      9: "ທ້າວ ມາວິນ ເສທະວົງ",
+      10: "ທ້າວ ວົງຊະນະ ສີສອນໄຊ",
+      11: "ທ້າວ ສົມສະຫງວນ ພິມມະວົງ",
+      12: "ທ້າວ ສີສົມພອນ ມະນີຄຳ",
+      13: "ນາງ ຫຼ້າບຸນມາ ປັນຍາພົງ",
+      14: "ນາງ ເພັດມະນີ ແສງດາວົງ",
+      15: "ນາງ ວິໄລພອນ ອານຸລາດ",
+      16: "ທ້າວ ໄຊປະເສີດ ແກ້ວຄຳພາວັນ",
+      17: "ນາງ ສຸທິດາ ພິມມະສອນ"
+    };
+
+    const QUESTION_BANK = {
+      lao: [
+{ question:"ຄວາມໝາຍຂອງການອະພິປາຍແມ່ນຂໍ້ໃດ?", choices: ["ການຄັດຄ້ານຕໍ່ສິ່ງທີ່ບໍ່ດີ","ການສະແດງບົດບາດສົມມຸດ","ການເວົ້າກ່ຽວກັບສິ່ງທີ່ດີຂອງສິ່ງໃດໜຶ່ງ","ການສະແດງຄວາມຄິດເຫັນ 2 ດ້ານ, ເຫດ ແລະ ຜົນ"], answer:"ການສະແດງຄວາມຄິດເຫັນ 2 ດ້ານ, ເຫດ ແລະ ຜົນ"},
+{ question:"ຂໍ້ໃດບົ່ງບອກເຖິງການຂຽນຈົດໝາຍ?", choices: ["ຂຽນຫາຄົນທີ່ບໍ່ຮູ້ຈັກ","ຂຽນສິ່ງທີ່ເຮົາເວົ້າໃຫ້ຄົນຮູ້","ຂຽນບອກສິ່ງໃດສິ່ງໜຶ່ງໃຫ້ອ່ານ","ຂຽນເພື່ອສົ່ງຂ່າວຜູ້ລຶ້ງເຄີຍ ແລະ ຮັກແພງ"], answer:"ຂຽນເພື່ອສົ່ງຂ່າວຜູ້ລຶ້ງເຄີຍ ແລະ ຮັກແພງ"},
+{ question:"ຂໍ້ໃດແມ່ນສະຫຼະປ່ຽນຮູບເມື່ອປະສົມຕົວສະກົດ ງ?", choices: ["ສ + xະ + ງ ປ່ຽນເປັນ ສ + xະ + ງ = ສະງ","ສ + xະ + ງ ປ່ຽນເປັນ ສ + xັ + ງ = ສັງ","ສ + xະ + ງ ປ່ຽນເປັນ ສ + xະ + ງ = ສງະ","ສ + xະ + ງ ປ່ຽນເປັນ ສ + xົ + ງ = ສົງ"], answer:"ສ + xະ + ງ ປ່ຽນເປັນ ສ + xັ + ງ = ສັງ"},
+{ question:"ໃນບົດພັນລະນາເວົ້າເຖິງກະຕ່າຍຕົວໜຶ່ງ, ບົດນີ້ແມ່ນບົດປະເພດໃດ?", choices: ["ພັນລະນະຄົນ","ພັນລະນາວັດຖຸ","ພັນລະນາສັດ","ພັນລະນາພາບ"], answer:"ພັນລະນາສັດ"},
+{ question:"ປະໂຫຍກໃນຂໍ້ໃດແມ່ນເວົ້າເຖິງກາລະປັດຈຸບັນ?", choices: ["ຂ້ອຍໄປວັດມື້ອື່ນ","ຂ້ອຍໄປຕະຫຼາດມາແລ້ວ","ຂ້ອຍຊິເດີນທາງໄປປາກເຊ","ຂ້ອຍພວມຍ່າງໄປໂຮງຮຽນ"], answer:"ຂ້ອຍພວມຍ່າງໄປໂຮງຮຽນ"},
+{ question:"ກອນວັກນີ້ແມ່ນສໍາຜັດຫຍັງ? “ເຮົາພໍ່າພ້ອມ ປູກໄມ້ໃຫ້ຫຼາຍ”", choices: ["ສໍາຜັດສະຫຼະ","ສໍາຜັດພະຍັນຊະນະ","ສໍາຜັດແມ່ນສະກົດ","ສໍາຜັດວັນນະຍຸດ"], answer:"ສໍາຜັດພະຍັນຊະນະ"},
+{ question:"ຂໍ້ໃດແມ່ນຄຸນລັກສະນະຂອງບົດກອນ?", choices: ["ວັກ, ຕອນ, ເຟື້ອງ, ບາດ, ແຖວ","ວັກ, ຕອນ, ເຟື້ອງ, ບາດ, ຄໍາ","ຄໍາ, ຕອນ, ແຖວ, ບາດ","ບາດ, ເລື່ອງ, ວັກ, ແຖວ"], answer:"ວັກ, ຕອນ, ເຟື້ອງ, ບາດ, ຄໍາ"},
+{ question:"ສູງ ແລະ ຕໍ່າແມ່ນຄໍາປະເພດໃດ?", choices: ["ຄໍານາມ","ຄໍາອຸທານ","ຄໍາກໍາມະ","ຄໍາກົງກັນຂ້າມ"], answer:"ຄໍາກົງກັນຂ້າມ"},
+{ question:"ຂໍ້ໃດແມ່ນຄໍາແທນນາມທັງໝົດ?", choices: ["ຂ້ອຍ, ເຈົ້າ, ພວກເຮົາ","ຂ້ອຍ, ແລ່ນ, ງາມ","ສູ, ເຂົາ, ໄປ","ໂຕ, ເພິ່ນ, ຕະຫຼາດ"], answer:"ຂ້ອຍ, ເຈົ້າ, ພວກເຮົາ"},
+{ question:"ຄໍາທີ່ຕື່ມໃສ່ທາງຫຼັງຂອງວັກໃນບົດກອນເອີ້ນວ່າຄໍາຫຍັງ?", choices: ["ຄໍາບຸບພະບົດ","ຄໍາອຸທານ","ຄໍາເຊື່ອມ","ຄໍາສ້ອຍ"], answer:"ຄໍາສ້ອຍ"},
+{ question:"ຖ້າມີຂໍ້ຄວາມອື່ນໆທີ່ຕ້ອງການຂຽນໃສ່ບ່ອນນີ້ແຕ່ຫາກບໍ່ຂຽນເຮົາໃຊ້ ເຄື່ອງໝາຍຫຍັງແທນ?", choices: ["ສອງຈໍ້າ (:)","ສາມຈໍ້າ (...)","ໝາຍຈຸດ (,)","ໝາຍທ້ວງ (!)"], answer:"ສາມຈໍ້າ (...)"},
+{ question:"ຄໍາສັບໃດທີ່ຂຽນຖືກ?", choices: ["ຂີ້ເຫື້ຍອ","ຂີ້ເຫຍອື້","ຂີ້ເຫຍື້ອ","ຂີ້ເຫື່ອຍ"], answer:"ຂີ້ເຫຍື້ອ"},
+{ question:"ຈົ່ງຈັດລຽງປະໂຫຍກລຸ່ມນີ້ໃຫ້ຖືກຕ້ອງດັ່ງ: ເປັນ / . / ຂ້ອຍ/ ເກັ່ງ/ ນັກຮຽນ/", choices: ["ຂ້ອຍເປັນນັກຮຽນເກັ່ງ.","ນັກຮຽນເກັ່ງເປັນຂ້ອຍ.","ເປັນຂ້ອຍນັກຮຽນເກັ່ງ.","ນັກຮຽນເກັ່ງຂ້ອຍເປັນ."], answer:"ຂ້ອຍເປັນນັກຮຽນເກັ່ງ."},
+{ question:"ມື້ໜຶ່ງແມ່ນຄໍາບອກເຖິງຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາບອກເວລາ","ບອກຕອນເຊົ້າ","ຄໍາບອກໃຫ້ຮູ້"], answer:"ຄໍາບອກເວລາ"},
+{ question:"ຄໍາໃຊ້ແທນຕົນເອງທີ່ເປັນທາງການແມ່ນຄໍາໃດ?", choices: ["ຂ້າພະເຈົ້າ","ຂ້ອຍ","ເຮົາ","ກູ"], answer:"ຂ້າພະເຈົ້າ"},
+{ question:"ສະຫຼະໃດເມື່ອປະກອບກັບຄໍາທີ່ມີຕົວສະກົດຮູບຈະປ່ຽນເປັນຮູບອື່ນ?", choices: ["ສະຫຼະ xາ","ສະຫຼະ xຸ","ສະຫຼະ xີ","ສະຫຼະ ໂxະ"], answer:"ສະຫຼະ ໂxະ"},
+{ question:"ສະຫຼະພິເສດໃນພາສາລາວມີຕົວໃດແດ່?", choices: ["ໄx, ໃx, ເxົາ, ເxີ","ໄx, ໃx, ເxົາ, ແx","ໄx, ເx, ເxົາ, xໍາ","ໄx, ໃx, ເxົາ, xໍາ"], answer:"ໄx, ໃx, ເxົາ, xໍາ"},
+{ question:"ຄໍາທີ່ໃຊ້ແທນຊື່ເອີ້ນຂອງຄົນ, ສັດ ແລະ ວັດຖຸສິ່ງຂອງແມ່ນຄໍາຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາຄຸນນາມ","ຄໍາກໍາມະ"], answer:"ຄໍາແທນນາມ"},
+{ question:"ຄໍາທີ່ຕື່ມໃສ່ຂ້າງໜ້າຂອງວັກໃນກາບກອນ ເອີ້ນວ່າຫຍັງ?", choices: ["ຄໍາສ້ອຍ","ຄໍາບຸບພະບົດ","ວັກ","ເຟື້ອງ"], answer:"ຄໍາບຸບພະບົດ"},
+{ question:"ຂໍ້ໃດແມ່ນ ຄໍາກໍາມະ ທັງໝົດ?", choices: ["ໄປ, ຂຽນ, ແມວ, ງາມ","ໄປ, ຂຽນ, ຟ້ອນ, ງາມ","ໄປ, ຂຽນ, ຟ້ອນ, ຍ່າງ","ໄປ, ຂຽນ, ຟ້ອນ, ຂ້ອຍ"], answer:"ໄປ, ຂຽນ, ຟ້ອນ, ຍ່າງ"},
+{ question:"ເຄື່ອງໝາຍທີ່ໃຊ້ໝາຍທ້າຍປະໂຫຍກ ເພື່ອສະແດງວ່າໝົດປະໂຫຍກ ຫຼື ໝົດວັກ ແມ່ນຂໍ້ໃດ?", choices: ["( . )","( , )","( : )","( ? )"], answer:"( . )"},
+{ question:"ສະຫຼະ ເxັຍ ເມື່ອປະກອບກັບຕົວສະກົດຈະປ່ຽນຈາກຮູບເດີມໄປເປັນຮູບໃດ?", choices: ["xັx","xຽx","ເxັ","xັຽ"], answer:"xັຽ"},
+{ question:"ຄໍາວ່າ: ປຶ້ມ, ໄກ່, ແມວ, ກະດານ ແມ່ນຄໍາຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາກໍາມະ","ຄໍາຄຸນນາມ"], answer:"ຄໍານາມ"},
+{ question:"ເຄື່ອງໝາຍທ້ວງ (!) ແມ່ນໃຫ້ຂຽນຢູ່ທ້າຍຄໍາຫຍັງ?", choices: ["ຄໍາບອກເວລາ","ຄໍາຕໍ່","ຄໍາອຸທານ","ຄໍາເຊື່ອມ"], answer:"ຄໍາອຸທານ"},
+{ question:"ການຂຽນຂ່າວຕ້ອງຂຽນແນວໃດ?", choices: ["ພາສາທ້ອງຖິນທີ່ຈະແຈ້ງ ແລະ ກະທັດຮັດ","ພາສາທີ່ຈະແຈ້ງ ແລະ ກະທັດຮັດ","ພາສາທີ່ຈະແຈ້ງ ແລະ ທັນສະໄໝ","ພາສາທີ່ເປັນເອກະລັກ ແລະ ກະທັດຮັດ"], answer:"ພາສາທີ່ຈະແຈ້ງ ແລະ ກະທັດຮັດ"},
+{ question:"ໃຫ້ສັງເກດເບິ່ງຂໍ້ຄວາມລຸ່ມນີ້ແມ່ນບົດຫຍັງ? (ນາງ ວັນແກ້ວ ເປັນນັກຮຽນ ປ.5 ລາວມີຄວາມສົນໃຈຕໍ່ອາຊີບການປົກປັກຮັກສາປ່າໄມ້)", choices: ["ບົດສະເໜີ","ບົດລາຍງານ","ບົດອະທິບາຍ","ບົດຊັກຊວນ"], answer:"ບົດລາຍງານ"},
+{ question:"ຂໍ້ໃດແມ່ນການສະແດງເຖິງສະຖານທີ່?", choices: ["ນັກຮຽນເກັ່ງ","ຕົ້ນໄມ້ທີ່ຂຽວງາມ","ໂຮງຮຽນປະຖົມ","ຂອງຂວັນວັນຄູ"], answer:"ໂຮງຮຽນປະຖົມ"},
+{ question:"ຄໍາໃນວົງເລັບລຸ່ມນີ້ ແມ່ນຢູ່ພາກໃດ? ຂອງໂຄງຮ່າງໃບຄໍາຮ້ອງ. (ບ້ານ, ເມືອງ ແລະ ແຂວງ)", choices: ["ພາກຕົ້ນ","ພາກແນະນໍາຕົນເອງ","ພາກເນື້ອໃນ","ພາກສະຫຼຸບ"], answer:"ພາກແນະນໍາຕົນເອງ"},
+{ question:"ໂຄງຮ່າງພັນລະນາມີຈັກພາກສ່ວນ?", choices: ["4 ພາກສ່ວນ","5 ພາກສ່ວນ","6 ພາກສ່ວນ","7 ພາກສ່ວນ"], answer:"4 ພາກສ່ວນ"},
+{ question:"ການກະຈາຍຂ່າວຜ່ານສື່ມວນຊົນມີຫຍັງແດ່?", choices: ["ໜັງສືພິມ, ວິທະຍຸ, ຄົນອື່ນ","ໜັງສືພິມ, ອ້າຍ ນ້ອງ, ໂທລະພາບ","ໝູ່ເພື່ອນ, ວິທະຍຸ, ໂທລະພາບ","ໜັງສືພິມ, ວິທະຍຸ, ໂທລະພາບ"], answer:"ໜັງສືພິມ, ວິທະຍຸ, ໂທລະພາບ"},
+{ question:"ຂໍ້ມູນລາຍງານຂ່າວເຫດການໃດໜຶ່ງຄວນລາຍງານແນວໃດ?", choices: ["ຄວາມຈິງ ແຕ່ກວດສອບບໍ່ໄດ້","ຄວາມຈິງ ແລະ ກວດສອບໄດ້","ບໍ່ມີຄວາມຈິງ ແລະ ກວດສອບໄດ້","ສະຖານທີ່ ແລະ ກວດສອບໄດ້"], answer:"ຄວາມຈິງ ແລະ ກວດສອບໄດ້"},
+{ question:"ຕອນທ້າຍບົດນິທານຄາຖາສາມຫຼອດສອນກ່ຽວກັບຫຍັງ?", choices: ["ຄວາມດື້ດ້ານ","ຄວາມເອົາແຕ່ໃຈ","ຄວາມອົດທົນ","ຄວາມດຸໝັ່ນ, ຄວາມອົດທົນ"], answer:"ຄວາມດຸໝັ່ນ, ຄວາມອົດທົນ"},
+{ question:"ຄໍາບຸບພະບົດແມ່ນຫຍັງ?", choices: ["ຄໍາຕື່ມໃສ່ທາງກາງຂອງກາບກອນ","ຄໍາຕື່ມໃສ່ຂ້າງໜ້າຂອງກາບກອນ","ຄໍາຕື່ມໃສ່ຂ້າງຫຼັງຂອງກາບກອນ","ຄໍາຕື່ມໃສ່ຕອນຕົ້ນຂອງກາບກອນ"], answer:"ຄໍາຕື່ມໃສ່ຂ້າງໜ້າຂອງກາບກອນ"},
+{ question:"ບົດທີ່ມີ ຫົວຂໍ້, ແຜນວາດ, ຮູບປະກອບ ແລະ ຄໍາສະຫຼຸບກ່ຽວກັບຫົວຂໍ້ ແມ່ນບົດຫຍັງ?", choices: ["ບົດໂຄສະນາ","ບົດອະທິບາຍ","ບົດກອນ","ບົດລາຍງານ"], answer:"ບົດລາຍງານ"},
+{ question:"ປະໂຫຍກໃດແມ່ນການຊັກຊວນ?", choices: ["ເຈົ້າໄປໂຮງຮຽນນໍາຂ້ອຍບໍ","ເຈົ້າຕ້ອງໄປໂຮງຮຽນ","ຂ້ອຍໄປໂຮງຮຽນນໍາອ້າຍ","ຂ້ອຍໄປໂຮງຮຽນນໍາໝູ່"], answer:"ເຈົ້າໄປໂຮງຮຽນນໍາຂ້ອຍບໍ"},
+{ question:"ໂຄງຮ່າງຂອງໃບຄໍາຮ້ອງມີພາກສ່ວນໃດແດ່?", choices: ["ພາກຕົ້ນ, ແນະນໍາຕົນເອງ, ສະຫຼຸບ","ພາກຕົ້ນ, ແນະນໍາຕົນເອງ, ເນື້ອໃນ, ສະຫຼຸບ","ພາກຕົ້ນ, ເນື້ອໃນ, ສະຫຼຸບ","ພາກຕົ້ນ, ແນະນໍາຕົນເອງ, ເນື້ອໃນ"], answer:"ພາກຕົ້ນ, ແນະນໍາຕົນເອງ, ເນື້ອໃນ, ສະຫຼຸບ"},
+{ question:"ປະໂຫຍກໃນວົງເລັບລຸ່ມນີ້ ແມ່ນຢູ່ຂັ້ນຕອນໃດ? ຂອງໂຄງຮ່າງບົດພັນລະນາຄົນ (ການປະຕິບັດທີ່ສະແດງອອກໃນດ້ານການຮຽນ)", choices: ["ຫົວຂໍ້","ເປີດຫົວເລື່ອງ","ເນື້ອເລື່ອງ","ສະຫຼຸບເລື່ອງ"], answer:"ເນື້ອເລື່ອງ"},
+{ question:"ພາກສ່ວນຂອງກາບກອນມີຫຍັງແດ່?", choices: ["ຄໍາ, ຕອນ, ວັກ, ເຟື້ອງ, ຂ້າງໜ້າ","ຄໍາ, ຕອນ, ວັກ, ເຟື້ອງ, ບາດ","ຄໍາ, ຕອນ, ວັກ, ບາດ, ຂ້າງຫຼັງ","ຄໍາ, ຕອນ, ເຟື້ອງ, ບາດ, ຕອນໜ້າ"], answer:"ຄໍາ, ຕອນ, ເຟື້ອງ, ບາດ, ຕອນໜ້າ"},
+{ question:"ພາກສ່ວນຂອງປະໂຫຍກປະກອບມີຫຍັງແດ່?", choices: ["ຄໍາຕົວຕັ້ງ, ຄໍາກໍາມະ ແລະ ຄໍາປະກອບ","ຄໍາຕົວຕັ້ງ, ຄໍານາມ ແລະ ຄໍາປະກອບ","ຄໍາຕົວຕັ້ງ, ຄໍາຄຸນນາມ ແລະ ຄໍາປະກອບ","ຄໍາຕົວຕັ້ງ, ຄໍາອຸທານ ແລະ ຄໍາປະກອບ"], answer:"ຄໍາຕົວຕັ້ງ, ຄໍາກໍາມະ ແລະ ຄໍາປະກອບ"},
+{ question:"ເຄື່ອງໝາຍທີ່ເພິ່ນໃຊ້ເພື່ອໃຫ້ນັກຮຽນອ່ານ, ຕ້ອງຢຸດເຊົາໜ້ອຍໜຶ່ງມີເຄື່ອງໝາຍແນວໃດ?", choices: ["ຈໍ້າເມັດ ແລະ ສອງຈໍ້າ","ຈຸດ ແລະ ຈໍ້າຈຸດ","ຈໍ້າເມັດ ແລະ ສາມຈໍ້າ","ຈຸດ ແລະ ສອງຈໍ້າ"], answer:"ຈຸດ ແລະ ຈໍ້າຈຸດ"},
+{ question:"ຂໍ້ໃດແມ່ນປະໂຫຍກທີ່ມີຄໍາອຸທານ?", choices: ["ດີແທ້, ມະນີ ເປັນເຍົາວະຊົນດີເດັ່ນ","ດີຫຼາຍ, ມະນີ ເປັນເຍົາວະຊົນດີເດັ່ນ","ຊົມເຊີຍ, ມະນີ ເປັນເຍົາວະຊົນຄົນເກັ່ງ","ເກັ່ງແທ້, ມະນີ ເປັນເຍົາວະຊົນຄົນເກັ່ງ"], answer:"ຊົມເຊີຍ, ມະນີ ເປັນເຍົາວະຊົນຄົນເກັ່ງ"},
+{ question:"ຂໍ້ໃດແມ່ນປະໂຫຍກຄໍາສັ່ງ?", choices: ["ຢ່າຫຼິ້ນນໍາໝູ່ແຮງຫຼາຍ","ຢ່າຫຼິ້ນໄຟຟ້າມັນອັນຕະລາຍ","ຢ່າຫຼິ້ນນໍາ້ຫຼາຍເດີ","ຢ່າຫຼິ້ນຂອງມີຄົມເດັດຂາດ"], answer:"ຢ່າຫຼິ້ນຂອງມີຄົມເດັດຂາດ"},
+{ question:"ປະໂຫຍກແມ່ນຫຍັງ?", choices: ["ປະໂຫຍກແມ່ນຄໍາຂະຫຍາຍ","ປະໂຫຍກແມ່ນຂໍ້ຄວາມທີ່ສື່ຄວາມໜາຍໄດ້ຄົບຖ້ວນ","ປະໂຫຍກແມ່ນຄໍາປະກອບ","ປະໂຫຍກແມ່ນຂໍ້ຄວາມທີ່ສື່ຄວາມໜາຍໄດ້"], answer:"ປະໂຫຍກແມ່ນຂໍ້ຄວາມທີ່ສື່ຄວາມໜາຍໄດ້ຄົບຖ້ວນ"},
+{ question:"ສູງເຕ່ວເວວບໍ່ມີຂໍ້ ຕໍ່າອໍ້ປໍ້ມີຂໍ້ທຸກຕາແມ່ນຫຍັງ?", choices: ["ຕົ້ນກ້ວຍ ແລະ ໝາກນັດ","ຕົ້ນກ້ວຍ ແລະ ໝາກກະທັນ","ຕົ້ນກ້ວຍ ແລະ ໝາກມ່ວງ","ຕົ້ນກ້ວຍ ແລະ ໝາກສີດາ"], answer:"ຕົ້ນກ້ວຍ ແລະ ໝາກນັດ"},
+{ question:"ຈົ່ງສັງເກດເບິ່ງຄໍາເວົ້າລຸ່ມນີ້ແມ່ນຂໍ້ໃດທີ່ເປັນຄໍາແທນນາມທັງໝົດ?", choices: ["ທ່ານ, ລາວ, ເວົ້າ, ໂຕະ","ທ່ານ, ລາວ, ຂ້ານ້ອຍ, ພວກເຮົາ","ທ່ານ, ລາວ, ຂ້ານ້ອຍ, ນົບໄຫວ້","ທ່ານ, ລາວ, ເວົ້າ, ໂດຍ"], answer:"ທ່ານ, ລາວ, ຂ້ານ້ອຍ, ພວກເຮົາ"},
+{ question:"ຄໍາສັບທີ່ຂຽນຖືກຕ້ອງ?", choices: ["ວິສະວາກອນ","ວິສາວະກອນ","ວິສະວະກອນ","ວິດສະວະກອນ"], answer:"ວິສະວະກອນ"},
+{ question:"ເຟື້ອງ ແມ່ນມີຈັກແຖວຂອງກາບກອນ?", choices: ["ມີ 4 ແຖວຂອງກາບກອນ","ມີ 3 ແຖວຂອງກາບກອນ","ມີ 2 ແຖວຂອງກາບກອນ","ມີ 1 ແຖວຂອງກາບກອນ"], answer:"ມີ 2 ແຖວຂອງກາບກອນ"},
+{ question:"ຄໍາວ່າ: ບູຮານສະຖານ ແປວ່າຫຍັງ?", choices: ["ສະຖານທີ່ເກົ່າແກ່ ບ່ອນທີ່ຄົນບູຮານໄດ້ສ້າງໄວ້","ສະຖານທີ່ເກົ່າແກ່ ທີ່ເກີດຂຶ້ນດ້ວຍທໍາມະຊາດ","ວັດຖຸທີ່ເກົ່າແກ່ ທີ່ເກີດຂຶ້ນດ້ວຍທໍາມະຊາດ","ວັດຖຸທີ່ເກົ່າແກ່ ບ່ອນທີ່ຄົນບູຮານໄດ້ສ້າງໄວ້"], answer:"ສະຖານທີ່ເກົ່າແກ່ ບ່ອນທີ່ຄົນບູຮານໄດ້ສ້າງໄວ້"},
+{ question:"ພະຍັນຊະນະ ທີ່ມີຫາງຂຶ້ນເທິງ ຫຼື ລົງລຸ່ມໃນພາສາລາວແມ່ນຂໍ້ໃດ?", choices: ["ງ, ຊ, ປ, ຝ, ຟ, ຢ, ຖ","ງ, ວ, ປ, ຝ, ຟ, ຢ","ທ, ນ, ປ, ຝ, ຟ, ດ, ຍ","ພ, ຕ, ຝ, ຟ, ຢ"], answer:"ງ, ຊ, ປ, ຝ, ຟ, ຢ, ຖ"},
+{ question:"ໃນພາສາລາວສຽງວັນນະຍຸດ (ສຽງສາມັນ) ມີລະດັບສຽງແນວໃດ?", choices: ["ເປັນສຽງກາງສະເໜີ","ເປັນສຽງສູງສະເໜີ ຫຼື ຕໍ່າສະເໜີ","ເປັນສຽງສູງຕົກ","ເປັນສຽງກາງຕົກ"], answer:"ເປັນສຽງສູງສະເໜີ ຫຼື ຕໍ່າສະເໜີ"},
+{ question:"ພະຍັນຊະນະມີໜ້າທີ່ຫຍັງ?", choices: ["ເປັນພະຍັນຊະນະຕົ້ນພະຍາງ, ທ້າຍພະຍາງ ຫຼື ຕົວສະກົດ","ເປັນພະຍັນຊະນະຕົ້ນພະຍາງ, ສະຫຼະ ຫຼື ຕົວສະກົດ","ເປັນພະຍັນຊະນະຕົ້ນພະຍາງ, ທ້າຍພະຍາງ ຫຼື ວັນນະຍຸດ","ວັນນະຍຸດ, ທ້າຍພະຍາງ ຫຼື ຕົວສະກົດ"], answer:"ເປັນພະຍັນຊະນະຕົ້ນພະຍາງ, ທ້າຍພະຍາງ ຫຼື ຕົວສະກົດ"},
+{ question:"ຊະນິດຂອງສຽງໃນພາສາລາວທີ່ຄົບຖ້ວນແມ່ນຂໍ້ໃດ?", choices: ["ສຽງພະຍັນຊະນະ ແລະ ສຽງວັນນະຍຸດ","ສຽງພະຍັນຊະນະ ແລະ ສຽງສະຫຼະ","ສຽງສະຫຼະ, ສຽງພະຍັນຊະນະ ແລະ ສຽງວັນນະຍຸດ","ສຽງສະຫຼະ ແລະ ສຽງວັນນະຍຸດ"], answer:"ສຽງສະຫຼະ, ສຽງພະຍັນຊະນະ ແລະ ສຽງວັນນະຍຸດ"},
+{ question:"ຂໍ້ໃດແມ່ນພະຍັນຊະນະຄວບ (ອັກສອນຄວບ)?", choices: ["ວ, ດ, ຣ","ວ, ລ, ຣ","ວ, ລ, ຮ","ບ, ລ, ຣ"], answer:"ວ, ລ, ຣ"},
+{ question:"ປະໂຫຍກໃດແມ່ນຄໍາຫຍໍ້ຂອງ (ສກມ)", choices: ["ສາດສະດາຈານ","ສາທາລະນະສຸກ","ສຶກສາທິການ ແລະ ກິລາເມືອງ","ສະຫະປະຊາຊາດ"], answer:"ສຶກສາທິການ ແລະ ກິລາເມືອງ"},
+{ question:"ພະຍັນຊະນະທີ່ເປັນຕົວສະກົດມີຕົວໃດແດ່?", choices: ["ກ, ງ, ຍ, ຜ, ນ, ບ, ມ, ວ","ກ, ງ, ຍ, ດ, ຝ, ບ, ມ, ວ","ກ, ງ, ຍ, ດ, ນ, ບ, ມ, ວ","ກ, ປ, ຍ, ດ, ນ, ບ, ມ, ວ"], answer:"ກ, ງ, ຍ, ດ, ນ, ບ, ມ, ວ"},
+{ question:"ຄໍາລາວເດີມຂຽນຕາມສຽງກາງທີ່ຖືກຕ້ອງແມ່ນຂໍ້ໃດ?", choices: ["ຫົວ, ໃນເຮືອນ, ບໍ່ໄດ້","ຫົວ, ໃບ້ໄມ້, ບໍ່ໄລ້","ເອື້ອຍ, ໃນເຮືອນ, ບໍ່ໄລ້","ຫົວ, ເບີໄມ້, ຄວາຍດ່ອນ"], answer:"ຫົວ, ໃນເຮືອນ, ບໍ່ໄດ້"},
+{ question:"ຂໍ້ໃດແມ່ນຕົວສະກົດຕາຍ?", choices: ["ກ, ດ, ບ","ກ, ນ, ວ","ກ, ດ, ງ","ກ, ດ, ມ"], answer:"ກ, ດ, ບ"},
+{ question:"ຄໍາວ່າ: (ໜັງສືພິມ, ວິທະຍຸ, ໂທລະພາບ, ຂ່າວອອນລາຍ) ແມ່ນບົດຫຍັງ?", choices: ["ບົດລາຍງານຂ່າວ","ບົດອະທິບາຍ","ບົດລາຍງານ","ບົດສົນທະນາ"], answer:"ບົດລາຍງານຂ່າວ"},
+{ question:"ເວລາຂຽນປະໂຫຍກຄໍາສັ່ງແມ່ນໃຊ້ເຄື່ອງໝາຍຫຍັງ?", choices: ["ໝາຍຈໍ້າຈຸດ","ໝາຍຈຸດ","ໝາຍສອງຈໍ້າ","ໝາຍທ້ວງ"], answer:"ໝາຍສອງຈໍ້າ"},
+{ question:"ຄໍາທີ່ໃຊ້ສະຫຼະສຽງສັ້ນ ແລະ ສະຫຼະສຽງຍາວທີ່ຂຽນຖືກຕ້ອງມີຄໍາໃດແດ່?", choices: ["ກາວີ, ກາຖິນ, ຈາລະຈອນ, ສັກດິນາ","ກະວີ, ກະຖິນ, ຈະລາຈອນ, ສັກດິນາ","ກະວີ, ກະຖິນ, ຈາລາຈອນ, ສັກດິນາ","ກະວີ, ສີລະປະ, ຈາລະຈອນ, ສັກດິນາ"], answer:"ກະວີ, ກະຖິນ, ຈະລາຈອນ, ສັກດິນາ"},
+{ question:"ປະໂຫຍກທີ່ມີຄໍາກາລະປັດຈຸບັນແມ່ນປະໂຫຍກຂໍ້ໃດ?", choices: ["ຂ້ອຍມາໂຮງຮຽນທຸກມື້","ພໍຮອດຄອຍຄໍ່າອາກາດເຢັນຫຼາຍ","ຂ້ອຍພວມຂຽນໜັງສື","ໝູ່ຂອງຂ້ອຍເປັນນັກຮຽນດີ"], answer:"ຂ້ອຍພວມຂຽນໜັງສື"},
+{ question:"ວະລີທີ່ມີຄໍານາມຢູ່ໜ້າ ຫຼື ຂຶ້ນຕົ້ນດ້ວຍຄໍານາມເອີ້ນວ່າຫຍັງ?", choices: ["ວະລີ","ຄໍານາມວະລີ","ຄໍານາມ","ຄໍາປະສົມ"], answer:"ຄໍານາມວະລີ"},
+{ question:"ວະລີທີ່ມີຄໍາກໍາມະຢູ່ໜ້າ ຫຼື ຂຶ້ນຕົ້ນດ້ວຍຄໍາກໍາມະເອີ້ນວ່າຫຍັງ?", choices: ["ກໍາມະວະລີ","ຄໍານາມວະລີ","ຄໍານາມ","ຄໍາປະສົມ"], answer:"ກໍາມະວະລີ"},
+{ question:"ຂໍ້ໃດແມ່ນຄໍານາມທັງໝົດ?", choices: ["ສໍ, ນົກ, ເຮືອນ, ຂ້ອຍ","ສໍ, ນົກ, ເຮືອນ, ງາມ","ສໍ, ນົກ, ເຮືອນ, ແມວ","ສໍ, ນົກ, ເຮືອນ, ເພິ່ນ"], answer:"ສໍ, ນົກ, ເຮືອນ, ແມວ"},
+{ question:"ຄໍາວ່າ: ງາມ, ຕຸ້ຍ, ຈ່ອຍ, ຂາວ ແມ່ນຄໍາຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາຄຸນນາມ","ຄໍາກໍາມະ"], answer:"ຄໍາຄຸນນາມ"},
+{ question:"ຄໍາທີ່ສະແດງເຖິງການເຄື່ອນໄຫວຂອງຄົນ, ສັດ ແລະ ວັດຖຸສິ່ງຂອງຕ່າງໆແມ່ນຄໍາຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາຄຸນນາມ","ຄໍາກໍາມະ"], answer:"ຄໍາກໍາມະ"},
+{ question:"ໂຄງຮ່າງພັນລະນາປະກອບມີພາກສ່ວນໃດແດ່?", choices: ["ເປີດຫົວເລື່ອງ, ສະຫຼຸບເລື່ອງ","ເປີດຫົວເລື່ອງ, ເນື້ອເລື່ອງ, ສະຫຼຸບເລື່ອງ","ເນື້ອເລື່ອງ, ສະຫຼຸບເລື່ອງ","ເປີດຫົວເລື່ອງ, ເນື້ອເລື່ອງ"], answer:"ເປີດຫົວເລື່ອງ, ເນື້ອເລື່ອງ, ສະຫຼຸບເລື່ອງ"},
+{ question:"ບົດກາບວັກໜຶ່ງມີຈັກຄໍາ?", choices: ["6 ຄໍາ","7 ຄໍາ","8 ຄໍາ","9 ຄໍາ"], answer:"7 ຄໍາ"},
+{ question:"ໃຫ້ສັງເກດປະໂຫຍກລຸ່ມນີ້ແມ່ນການສະແດງຄວາມຄິດເຫັນຫຍັງ? (ການອ່ານແມ່ນພາຫະວິເສດທີ່ພາເຈົ້າໄປ ທຸກແຫ່ງທຸກຫົນ)", choices: ["ແບບຄວາມຄິດເຫັນ","ແບບອະທິບາຍ","ແບບຊັກຊວນ","ແບບສົນທະນາ"], answer:"ແບບຊັກຊວນ"},
+{ question:"ການສະແດງຄວາມຄິດເຫັນແບບອະພິປາຍມີຈັກດ້ານ?", choices: ["2 ດ້ານ","3 ດ້ານ","4 ດ້ານ","5 ດ້ານ"], answer:"2 ດ້ານ"},
+{ question:"ບົດສົນທະນາມີລໍາດັບເຫດຜົນຄວາມຈິງ, ມີຂໍ້ຄິດເຫັນສ່ວນຕົວຂອງໃຜ?", choices: ["ຈາກໝູ່ເພື່ອນ","ຈາກພໍ່ແມ່","ຈາກຜູ້ຂຽນ","ຈາກເອື້ອຍອ້າຍ"], answer:"ຈາກຜູ້ຂຽນ"},
+{ question:"ບົດສະແດງຄວາມຄິດເຫັນແບບອະພິປາຍມັກຕົກລົງຮ່ວມກັນແກ້ໄຂຮ່ວມຕອນໃດ?", choices: ["ຕອນຕົ້ນ","ຕອນດໍາເນີນ","ຕອນກາງ","ຕອນທ້າຍ"], answer:"ຕອນທ້າຍ"},
+{ question:"ນິທານແມ່ນຫຍັງ?", choices: ["ຕື່ນເຕັ້ນ","ອະທິບາຍ","ສົນທະນາ","ຜູ້ຟັງຈື່ຈໍາ"], answer:"ຕື່ນເຕັ້ນ"},
+{ question:"ບົດພັນລະນາເລີ່ມຕົ້ນດ້ວຍຫຍັງ?", choices: ["ເປີດຫົວເລື່ອງ","ເນື້ອເລື່ອງ","ສະຫຼຸບເລື່ອງ","ຫົວຂໍ້ເລື່ອງ"], answer:"ຫົວຂໍ້ເລື່ອງ"},
+{ question:"ຄໍາຮ້ອງທີ່ນັກຮຽນມັກນໍາໃຊ້ເປັນປະຈໍາແມ່ນຄໍາຮ້ອງໃດແດ່?", choices: ["ຄໍາຮ້ອງຂໍເຂົ້າອົງການຈັດຕັ້ງໃດໜຶ່ງ, ຄໍາຮ້ອງຂໍເຂົ້າເຮັດວຽກ","ຄໍາຮ້ອງຂໍເຂົ້າອົງການຈັດຕັ້ງໃດໜຶ່ງ, ຄໍາຮ້ອງຂໍໄປທ່ຽວ","ຄໍາຮ້ອງຂໍເຂົ້າອົງການຈັດຕັ້ງໃດໜຶ່ງ, ຄໍາຮ້ອງຂໍເຂົ້າຮຽນ","ຄໍາຮ້ອງຂໍເຂົ້າອົງການຈັດຕັ້ງໃດໜຶ່ງ, ຄໍາຮ້ອງຂໍເຂົ້າຮ່ວມກອງປະຊຸມ"], answer:"ຄໍາຮ້ອງຂໍເຂົ້າອົງການຈັດຕັ້ງໃດໜຶ່ງ, ຄໍາຮ້ອງຂໍເຂົ້າຮຽນ"},
+{ question:"ການຂຽນຈົດໝາຍປະກອບດ້ວຍພາກທີ່ສໍາຄັນມີຫຍັງແດ່?", choices: ["ຕອນຕົ້ນຂອງຈົດໝາຍ, ຕອນກາງຂອງຈົດໝາຍ ແລະ  ຕອນທ້າຍຂອງຈົດໝາຍ","ຕອນຕົ້ນຂອງຈົດໝາຍ, ເນື້ອໃນຂອງຈົດໝາຍ ແລະ ຕອນທ້າຍຂອງຈົດໝາຍ","ຕອນຕົ້ນຂອງຈົດໝາຍ, ເນື້ອໃນຂອງຈົດໝາຍ ແລະ ຕອນສະຫຼຸບຂອງຈົດໝາຍ","ຕອນຕົ້ນຂອງຈົດໝາຍ, ຕອນກາງຂອງຈົດໝາຍ ແລະ ຕອນຈົບຂອງຈົດໝາຍ"], answer:"ຕອນຕົ້ນຂອງຈົດໝາຍ, ເນື້ອໃນຂອງຈົດໝາຍ ແລະ ຕອນທ້າຍຂອງຈົດໝາຍ"},
+{ question:"ການພັນລະນາ ສິ່ງທີ່ເກີດຂຶ້ນຊ່ວງໄລຍະໃດໜຶ່ງເຊັ່ນ: ຫ່າຝົນ, ລົມພາຍຸ, ຕາເວັນຂຶ້ນ, ຕາເວັນຕົກ, ລະດູແລ້ງ, ລະດູຝົນ ແລະ ອື່ນໆ ເອີ້ນວ່າການພັນລະນາຫຍັງ?", choices: ["ຊີວິດປະຈໍາວັນ","ທັດສະນີຍະພາບ","ປະກົດການທໍາມະຊາດ","ການດໍາລົງຊີວິດ"], answer:"ປະກົດການທໍາມະຊາດ"},
+{ question:"ການພັນລະນາມີຈັກປະເພດ?", choices: ["3 ປະເພດ","4 ປະເພດ","5 ປະເພດ","6 ປະເພດ"], answer:"4 ປະເພດ"},
+{ question:"ວັນ, ເດືອນ, ປີ ຕ້ອງຂຽນໃສ່ ພາກໃດຂອງບົດລາຍງານ?", choices: ["ພາກຕົ້ນ","ພາກເນື້ອໃນ","ພາກສຸດທ້າຍ","ພາກສະຫຼຸບ"], answer:"ພາກຕົ້ນ"},
+{ question:"ຄວາມນຶກຄິດ, ຄຸນປະໂຫຍດ, ແລະ ວິທີຮັກສາ ແມ່ນຢູ່ພາກສ່ວນໃດ?", choices: ["ເປີດຫົວເລື່ອງ","ເດີນເລື່ອງ","ສະຫຼຸບເລື່ອງ","ເນື້ອໃນເລື່ອງ"], answer:"ສະຫຼຸບເລື່ອງ"},
+{ question:"ສີ, ຮູບຮ່າງ, ລັກສະນະ, ຈຸດພິເສດແຕກຕ່າງ ແລະ ຄວາມສໍາຄັນຂອງວັດຖຸນັ້ນໆ ແມ່ນຢູ່ພາກສ່ວນໃດ?", choices: ["ເປີດຫົວເລື່ອງ","ເດີນເລື່ອງ","ສະຫຼຸບເລື່ອງ","ຫົວຂໍ້ເລື່ອງ"], answer:"ເດີນເລື່ອງ"},
+{ question:"ພາບທໍາມະຊາດ ແລະ ພາບທີ່ຄົນສ້າງຂຶ້ນ ແມ່ນການພັນລະນາຫຍັງ?", choices: ["ຊີວິດປະຈໍາວັນ","ປະກົດການທໍາມະຊາດ","ທັດສະນີຍະພາບ","ການດໍາລົງຊີວິດ"], answer:"ປະກົດການທໍາມະຊາດ"},
+{ question:"ການພັນລະນາພາບມີຈັກປະເພດ?", choices: ["2 ປະເພດ","3 ປະເພດ","4 ປະເພດ","5 ປະເພດ"], answer:"2 ປະເພດ"},
+{ question:"ການພັນລະນາຄົນໃຫ້ເອົາໃຈໃສ່ດ້ານໃດແດ່?", choices: ["ຮູບຮ່າງ, ນິໄສ ແລະ ການເຄື່ອນໄຫວ","ຮູບຮ່າງ, ນິໄສ ແລະ ຄຸນສົມບັດ","ຮູບຮ່າງ, ທ່າທີ ແລະ ການເຄື່ອນໄຫວ","ຮູບຮ່າງ, ທ່າທີ ແລະ ນິໄສ"], answer:"ຮູບຮ່າງ, ນິໄສ ແລະ ການເຄື່ອນໄຫວ"},
+{ question:"ຄຸນປະໂຫຍດຂອງປ່າໄມ້ຕໍ່ສິ່ງທີ່ມີຊີວິດ ແມ່ນຢູ່ພາກສ່ວນໃດ?", choices: ["ເປີດຫົວເລື່ອງ","ເດີນເລື່ອງ","ສະຫຼຸບເລື່ອງ","ເນື້ອໃນເລື່ອງ"], answer:"ສະຫຼຸບເລື່ອງ"},
+{ question:"ນັກຮຽນຢາກຂໍລາພັກຮຽນຕ້ອງຂຽນຄໍາຮ້ອງ ເພື່ອຂໍອະນຸຍາດຈາກໃຜ?", choices: ["ຄະນະຫ້ອງ","ຄູປະຈໍາຫ້ອງ","ຫົວໜ້າໜ່ວຍ","ຫົວໜ້າຫ້ອງ"], answer:"ຄູປະຈໍາຫ້ອງ"},
+{ question:"ສໍາລັບນັກຮຽນ ປ.5 ຄໍາຮ້ອງທີ່ຄວນຮູ້ ແລະ ມັກໄດ້ນໍາໃຊ້ເປັນປະຈໍາມີຄໍາຮ້ອງໃດແດ່?", choices: ["ຄໍາຮ້ອງຂໍລາພັກຮຽນ, ຄໍາຮ້ອງຂໍເຂົ້າໂຮງຮຽນ ແລະ  ຄໍາຮ້ອງສະເໜີເຂົ້າເປັນສະມາຊິກຂອງກອງເຍົາວະຊົນທັນວາ","ຄໍາຮ້ອງຂໍລາພັກຮຽນ, ຄໍາຮ້ອງຂໍເຂົ້າໂຮງຮຽນ ແລະ  ຄໍາຮ້ອງສະເໜີຄະນະຫ້ອງ","ຄໍາຮ້ອງຂໍລາພັກຮຽນ, ຄໍາຮ້ອງຂໍເຂົ້າຫໍສະໝຸດ ແລະ  ຄໍາຮ້ອງສະເໜີເຂົ້າເປັນສະມາຊິກຂອງກອງເຍົາວະຊົນທັນວາ","ຄໍາຮ້ອງຂໍລາພັກຮຽນ, ຄໍາຮ້ອງຂໍສອບເສັງຈົບຊັ້ນ ແລະ ຄໍາຮ້ອງຂໍລາອອກ"], answer:"ຄໍາຮ້ອງຂໍລາພັກຮຽນ, ຄໍາຮ້ອງຂໍເຂົ້າໂຮງຮຽນ ແລະ  ຄໍາຮ້ອງສະເໜີເຂົ້າເປັນສະມາຊິກຂອງກອງເຍົາວະຊົນທັນວາ"},
+{ question:"ການພັນລະນາ (ການອອກແຮງງານລວມ) ແມ່ນການພັນລະນາຫຍັງ?", choices: ["ທັດສະນີຍະພາບ","ປະກົດການທໍາມະຊາດ","ຊີວິດປະຈໍາວັນ","ພາບທໍາມະຊາດ"], answer:"ຊີວິດປະຈໍາວັນ"},
+{ question:"ປະໂຫຍກໃນວົງເລັບລຸ່ມນີ້ ແມ່ນຢູ່ຂັ້ນຕອນໃດ? ຂອງໂຄງຮ່າງບົດພັນລະນາສັດ (ຊື້ຢູ່ໃສ? ເວລາໃດ? ໃຜຊື້ໃຫ້?)", choices: ["ເປີດເລື່ອງ","ເດີນເລື່ອງ","ສະຫຼຸບເລື່ອງ","ຫົວຂໍ້"], answer:"ເປີດເລື່ອງ"},
+{ question:"ການພັນລະນາທັດສະນີຍະພາບທີ່ຄົນສ້າງຂຶ້ນ?", choices: ["ແມ່ນໍ້າ, ດອກໄມ້","ແມ່ນໍ້າ, ໂຮງຮຽນ","ແມ່ນໍ້າ, ຕະຫຼາດ","ໂຮງໝໍ, ຕະຫຼາດ"], answer:"ໂຮງໝໍ, ຕະຫຼາດ"},
+{ question:"ການພັນລະນາທັດສະນີຍະພາບທໍາມະຊາດ?", choices: ["ແມ່ນໍ້າ, ພູຜາ","ແມ່ນໍ້າ, ໂຮງຮຽນ","ແມ່ນໍ້າ, ຕະຫຼາດ","ແມ່ນໍ້າ, ຮ້ານຄ້າ"], answer:"ແມ່ນໍ້າ, ພູຜາ"},
+{ question:"ການພັນລະນາປາກົດທໍາມະຊາດສິ່ງທີ່ເກີດຂຶ້ນຊ່ວງໄລຍະໃດໜຶ່ງມີຫຍັງແດ່?", choices: ["ຫ່າຝົນ, ການອອກແຮງງານ","ຕາເວັນຂຶ້ນ, ຮ້ານຄ້າ","ຕາເວັນຕົກ, ຕະຫຼາດ","ຫ່າຝົນ, ລົມພາຍຸ"], answer:"ຫ່າຝົນ, ລົມພາຍຸ"},
+{ question:"ການພັນລະນາຄົນຕ້ອງເອົາໃຈໃສ່ຈັກດ້ານ?", choices: ["2 ດ້ານ","3 ດ້ານ","4 ດ້ານ","5 ດ້ານ"], answer:"4 ດ້ານ"},
+{ question:"ໂຄງຮ່າງການພັນລະນາການເຄື່ອນໄຫວຂອງຄົນ, ໃນຂັ້ນຕອນສະຫຼຸບ ເວົ້າກ່ຽວກັບຫຍັງ?", choices: ["ບົດຮຽນທີ່ໄດ້ຈາກຄົນຜູ້ນັ້ນ","ຄວາມຮູ້ສຶກຂອງຜູ້ຂຽນ ຕໍ່ກັບຄົນຜູ້ທີ່ຖືກພັນລະນາ","ເວົ້າຄືນເນື້ອໃນສໍາຄັນຂອງເລື່ອງທີ່ແຕ່ງ","ການນຸ່ງຖື ມັກນຸ່ງເຄື່ອງແນວໃດ ແລະ ສີຫຍັງ?"], answer:"ຄວາມຮູ້ສຶກຂອງຜູ້ຂຽນ ຕໍ່ກັບຄົນຜູ້ທີ່ຖືກພັນລະນາ"},
+{ question:"ການພັນລະນາຄົນຕ້ອງເອົາໃສ່ດ້ານໃດແດ່?", choices: ["ຮູບຮ່າງ, ນິໄສ, ການນຸ່ງຖື","ຮູບຮ່າງ, ນິໄສ, ຄຸນສົມບັດ","ຮູບຮ່າງ, ນິໄສ, ການເຄື່ອນໄຫວ","ຮູບຮ່າງ, ນິໄສ, ການເວົ້າຈາ"], answer:"ຮູບຮ່າງ, ນິໄສ, ການເຄື່ອນໄຫວ"},
+{ question:"ໂຄງຮ່າງພັນລະນາວັດຖຸສິ່ງຂອງປະກອບມີພາກສ່ວນໃດແດ່?", choices: ["ເປີດຫົວເລື່ອງ, ສະຫຼຸບເລື່ອງ","ເປີດຫົວເລື່ອງ, ເດີນເລື່ອງ, ສະຫຼຸບເລື່ອງ","ເປີດຫົວເລື່ອງ, ເນື້ອເລື່ອງ","ເປີດຫົວເລື່ອງ, ເນື້ອໃນ"], answer:"ເປີດຫົວເລື່ອງ, ເດີນເລື່ອງ, ສະຫຼຸບເລື່ອງ"},
+{ question:"ໃນໂຄງຮ່າງບົດພັນລະນາສັດ ປະໂຫຍດ ແລະ ໂທດທີ່ມີຕໍ່ຄົນເຮົາ ແມ່ນຢູ່ຂັ້ນຕອນໃດ?", choices: ["ເປີດຫົວເລື່ອງ","ເດີນເລື່ອງ","ເນື້ອເລື່ອງ","ສະຫຼຸບເລື່ອງ"], answer:"ເນື້ອເລື່ອງ"},
+{ question:"ການພັນລະນາ ທັດສະນີຍະພາບ ປະກອບມີຫຍັງແດ່?", choices: ["ພາບທີ່ຄົນສ້າງຂຶ້ນ ແລະ ພາບຊີວິດປະຈໍາວັນ","ພາບການເຄື່ອນໄຫວ ແລະ ພາບທີ່ຄົນສ້າງຂຶ້ນ","ພາບທໍາມະຊາດ ແລະ ພາບທີ່ຄົນສ້າງຂຶ້ນ","ພາບທໍາມະຊາດ ແລະ ພາບປະກົດການ"], answer:"ພາບທໍາມະຊາດ ແລະ ພາບທີ່ຄົນສ້າງຂຶ້ນ"},
+{ question:"ໂຄງຮ່າງບົດພັນລະນາທັດສະນີຍະພາບ ໃນຂັ້ນສະຫຼຸບເລື່ອງເວົ້າເຖິງຫຍັງ?", choices: ["ຊັບພະຍາກອນປ່າໄມ້ ແລະ ຮັກສາປ່າໃຫ້ຄົງຢູ່ຕະຫຼອດໄປ","ການຂະຫຍາຍ ແລະ ຮັກສາປ່າໃຫ້ຄົງຢູ່ຕະຫຼອດໄປ","ຄວາມອຸດົມສົມບູນຂອງປ່າ ແລະ ຮັກສາປ່າໃຫ້ຄົງຢູ່ຕະຫຼອດໄປ","ການບົວລະບັດ ແລະ ຮັກສາປ່າໃຫ້ຄົງຢູ່ຕະຫຼອດໄປ"], answer:"ຊັບພະຍາກອນປ່າໄມ້ ແລະ ຮັກສາປ່າໃຫ້ຄົງຢູ່ຕະຫຼອດໄປ"},
+{ question:"ປະເພດຂອງບົດພັນລະນາ ປະກອບມີຫຍັງແດ່?", choices: ["ບົດພັນລະນາວັດຖຸສິ່ງຂອງ, ບົດພັນລະນາສັດ, ບົດພັນລະນາຄົນ, ບົດພັນລະນາພາບ","ບົດພັນລະນາວັດຖຸສິ່ງຂອງ, ບົດພັນລະນາສັດ, ພາບທໍາມະຊາດ, ບົດພັນລະນາພາບ","ບົດພັນລະນາວັດຖຸສິ່ງຂອງ, ພາບທີ່ຄົນສ້າງຂຶ້ນ, ບົດພັນລະນາຄົນ, ບົດພັນລະນາພາບ","ບົດພັນລະນາວັດຖຸສິ່ງຂອງ, ບົດພັນລະນາສັດ, ບົດພັນລະນາຄົນ, ພາບການກ່ຽວເຂົ້າໃນຕອນໜຶ່"], answer:"ບົດພັນລະນາວັດຖຸສິ່ງຂອງ, ບົດພັນລະນາສັດ, ບົດພັນລະນາຄົນ, ບົດພັນລະນາພາບ"},
+{ question:"ໂຄງຮ່າງການຂຽນຈົດໝາຍ, ຕອນຕົ້ນຂອງຈົດໝາຍເວົ້າເຖິງຫຍັງ?", choices: ["ທີ່ຢູ່, ວັນທີ ເດືອນ ປີ ຂອງຜູ້ຂຽນ","ສາເຫດຂອງການຂຽນຈົດໝາຍ","ສະແດງຄວາມຜູກພັນລະຫວ່າງກັນ ແລະ ກັນ","ຖາມຂ່າວຄາວຜູ້ຮັບຈົດໝາຍ"], answer:"ທີ່ຢູ່, ວັນທີ ເດືອນ ປີ ຂອງຜູ້ຂຽນ"},
+{ question:"ຄໍາທີ່ໃຊ້ບອກຊື່ຂອງຄົນ, ສັດ ແລະ ວັດຖຸສິ່ງຂອງ ແມ່ນຄໍາຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາກໍາມະ","ຄໍາຄຸນນາມ"], answer:"ຄໍານາມ"},
+{ question:"ຂໍ້ໃດແມ່ນຄໍາແທນນາມທັງໝົດ?", choices: ["ຂ້ອຍ, ເພິ່ນ, ໄປ","ຂ້ອຍ, ເພິ່ນ, ນົກ","ຂ້ອຍ, ເພິ່ນ, ລາວ","ຂ້ອຍ, ເພິ່ນ, ປຶ້ມ"], answer:"ຂ້ອຍ, ເພິ່ນ, ລາວ"},
+{ question:"ພະຍັນຊະນະສຽງສູງ ໃນພາສາລາວ ມີທັງໝົດຈັກຕົວ?", choices: ["5 ຕົວ","6 ຕົວ","7 ຕົວ","8 ຕົວ"], answer:"6 ຕົວ"},
+{ question:"ພະຍັນຊະນະ (ກ, ຈ, ດ, ຕ, ບ, ປ, ຢ, ອ) ແມ່ນພະຍັນຊະນະສຽງຫຍັງ?", choices: ["ສຽງສັ້ນ","ສຽງຕໍ່າ","ສຽງກາງ","ສຽງສູງ"], answer:"ສຽງກາງ"},
+{ question:"ຄໍາວ່າ (ຟ້ອນ, ຮ້ອງເພງ, ຂຽນ, ອ່ານ) ແມ່ນຄໍາຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາກໍາມະ","ຄໍາຄຸນນາມ"], answer:"ຄໍາກໍາມະ"},
+{ question:"ເຄື່ອງໝາຍທີ່ໃຊ້ຂຽນຢູ່ທ້າຍຄໍາ ຫຼື ຂໍ້ຄວາມເພື່ອໝາຍບອກເຖິງຄວາມຕື່ນເຕັ້ນ ແມ່ນເຄື່ອງໝາຍຫຍັງ?", choices: ["( ; )","(!)","(&)","(:)"], answer:"(!)"},
+{ question:"ຄໍາທີ່ຕື່ມໃສ່ທາງໜ້າຂອງວັກໃນກາບກອນເອີ້ນວ່າຫຍັງ?", choices: ["ຄໍານໍາໜ້າ","ຄໍາຂຶ້ນຕົ້ນ","ຄໍາສ້ອຍ","ຄໍາບຸບພະບົດ"], answer:"ຄໍາບຸບພະບົດ"},
+{ question:"ປະໂຫຍກໃດແມ່ນປະໂຫຍກທີ່ມີຄໍາບອກເວລາ?", choices: ["ພວກຂ້ອຍເປັນນັກຮຽນຫ້ອງ ປ.5","ພວກຂ້ອຍພາກັນອະນາໄມຫ້ອງຮຽນ","ພວກຂ້ອຍມີຄວາມສາມັກຄີຊ່ວຍເຫຼືອເຊິ່ງກັນ ແລະ ກັນ","ມື້ນີ້ພວກຂ້ອຍປູກດອກໄມ້ປະດັບ"], answer:"ມື້ນີ້ພວກຂ້ອຍປູກດອກໄມ້ປະດັບ"},
+{ question:"ປະໂຫຍກທີ່ມີຄໍາກາລະປັດຈຸບັນແມ່ນມີປະໂຫຍກໃນຂໍ້ໃດ?", choices: ["ຂ້ອຍມາໂຮງຮຽນທຸກມື້","ພໍຮອດຄ້ອຍຄໍ່າອາກາດເຢັນຫຼາຍ","ຂ້ອຍພວມຂຽນໜັງສື","ໝູ່ຂອງຂ້ອຍເປັນນັກຮຽນດີ"], answer:"ຂ້ອຍພວມຂຽນໜັງສື"},
+{ question:"ພະຍັນຊະນະສຽງກາງໃນພາສາລາວມີທັງໝົດຈັກຕົວ?", choices: ["5 ຕົວ","6 ຕົວ","7 ຕົວ","8 ຕົວ"], answer:"8 ຕົວ"},
+{ question:"ພະຍັນຊະນະປະສົມໃນພາສາລາວມີຕົວໃດແດ່?", choices: ["ຫງ, ຫຍ, ໜ, ໝ, ຫຼ, ຣ","ຫງ, ຫຍ, ໜ, ໝ, ຫຼ, ຽ","ຫງ, ຫຍ, ໜ, ໝ, ຫຼ, ຫວ","ຫງ, ຫຍ, ໜ, ໝ, ຫຼ, ລ"], answer:"ຫງ, ຫຍ, ໜ, ໝ, ຫຼ, ຫວ"},
+{ question:"ຂໍ້ໃດແມ່ນຄໍານາມທັງໝົດ?", choices: ["ປຶ້ມ, ໂຕະ, ໄກ່, ເຈົ້າ","ປຶ້ມ, ຂ້ອຍ, ໂຕະ, ໄກ່","ປຶ້ມ, ໂຕະ, ໄກ່, ລາວ","ປຶ້ມ, ໂຕະ, ໄກ່, ນາງແພງ"], answer:"ປຶ້ມ, ໂຕະ, ໄກ່, ນາງແພງ"},
+{ question:"ປະໂຫຍກໃດເປັນປະໂຫຍກທີ່ມີຄໍາບອກເວລາ?", choices: ["ຂ້ອຍເຮັດວຽກຊ່ວຍພໍ່ແມ່","ມື້ວານນີ້ຂ້ອຍໄປຕະຫຼາດນໍາແມ່","ເຮົາຕ້ອງໝັ່ນລ້າງມືໃສ່ສະບູ","ທຸກຄົນຊ່ວຍກັນເຮັດອະນາໄມ"], answer:"ມື້ວານນີ້ຂ້ອຍໄປຕະຫຼາດນໍາແມ່"},
+{ question:"ພະຍາງ ຫຼື ຄໍາເວົ້າໜຶ່ງໃນກາບກອນເອີ້ນວ່າຫຍັງ?", choices: ["ຄໍາ","ຕອນ","ວັກ","ເຟື້ອງ"], answer:"ຄໍາ"},
+{ question:"ຄໍາທີ່ບອກລັກສະນະຂອງຄໍານາມ, ຄໍາແທນນາມ, ຄໍາກໍາມະ ແລະ ຄໍາຄຸນນາມດ້ວຍກັນແມ່ນຫຍັງ?", choices: ["ຄໍານາມ","ຄໍາແທນນາມ","ຄໍາກໍາມະ","ຄໍາຄຸນນາມ"], answer:"ຄໍາຄຸນນາມ"},
+{ question:"ຄວາມໝາຍຂອງການອະພິປາຍແມ່ນຂໍ້ໃດ?", choices: ["ການຄັດຄ້ານຕໍ່ສິ່ງທີ່ບໍ່ດີ","ການສະແດງບົດບາດສົມມຸດ","ການເວົ້າກ່ຽວກັບສິ່ງທີ່ດີຂອງສິ່ງໃດໜຶ່ງ","ການສະແດງຄວາມຄິດເຫັນ 2 ດ້ານ, ເຫດ ແລະ ຜົນ"], answer:"ການສະແດງຄວາມຄິດເຫັນ 2 ດ້ານ, ເຫດ ແລະ ຜົນ"},
+{ question:"ຂໍ້ໃດບົ່ງບອກເຖິງການຂຽນຈົດໝາຍ?", choices: ["ຂຽນຫາຄົນທີ່ບໍ່ຮູ້ຈັກ","ຂຽນສິ່ງທີ່ເຮົາເວົ້າໃຫ້ຄົນຮູ້","ຂຽນບອກສິ່ງໃດສິ່ງໜຶ່ງໃຫ້ອ່ານ","ຂຽນເພື່ອສົ່ງຂ່າວຜູ້ລຶ້ງເຄີຍ ແລະ ຮັກແພງ"], answer:"ຂຽນເພື່ອສົ່ງຂ່າວຜູ້ລຶ້ງເຄີຍ ແລະ ຮັກແພງ"},
+{ question:"ຂໍ້ໃດແມ່ນສະຫຼະປ່ຽນຮູບເມື່ອປະສົມຕົວສະກົດ ງ?", choices: ["ສ + xະ + ງ ປ່ຽນເປັນ ສ + xະ + ງ = ສະງ","ສ + xະ + ງ ປ່ຽນເປັນ ສ + xັ + ງ = ສັງ","ສ + xະ + ງ ປ່ຽນເປັນ ສ + xະ + ງ = ສງະ","ສ + xະ + ງ ປ່ຽນເປັນ ສ + xົ + ງ = ສົງ"], answer:"ສ + xະ + ງ ປ່ຽນເປັນ ສ + xັ + ງ = ສັງ"},
+{ question:"ໃນບົດພັນລະນາເວົ້າເຖິງກະຕ່າຍຕົວໜຶ່ງ, ບົດນີ້ແມ່ນບົດປະເພດໃດ?", choices: ["ພັນລະນະຄົນ","ພັນລະນາວັດຖຸ","ພັນລະນາສັດ","ພັນລະນາພາບ"], answer:"ພັນລະນາສັດ"},
+      ],
+      math: [
+{ question:"ຂໍ້ໃດລຸ່ມນີ້ ບໍ່ຖືກຕ້ອງ?", choices: ["\\(29 + 92 = (2 + 9) × (9 + 2)\\)","\\(37 + 74 = (4 + 7) × (7 + 4)\\)","\\(36 + 63 = (3 + 6) × (6 + 3) \\)","\\(56 + 65 = (5 + 6) × (6 + 5) \\)"], answer:"\\(37 + 74 = (4 + 7) × (7 + 4)\\)"},
+{ question:"ຂໍ້ໃດມີໄລຍະເວລາໃກ້ຄຽງກັບ \\(1\\) ວັນ ຫຼາຍທີ່ສູດ?", choices: ["\\(0,9\\) ວັນ","\\(1,2\\) ວັນ","\\(23\\) ຊົ່ວໂມງ","\\(1410\\) ນາທີ"], answer:"\\(1410\\) ນາທີ"},
+{ question:"ຜົນການຄິດໄລ່ \\(3 × 11 × 61 + 3 + 11 + 61\\) ກົງກັບຄໍາຕອບຂໍ້ໃດ?", choices: ["\\(2013\\)","\\(2088\\)","\\(2113\\)","\\(4026\\)"], answer:"\\(2088\\)"},
+{ question:"ສາມຈໍານວນໃດທີ່ມີຜົນຄູນເທົ່າກັບ \\(2024\\)?", choices: ["\\(8; 11; 23\\)","\\(8; 19; 53\\)","\\(8; 13; 59\\)","\\(8, 23; 29\\)"], answer:"\\(8; 11; 23\\)"},
+{ question:"ຜົນທີ່ຫານ \\(a\\) ໃຫ້ \\(b\\) ຂອງອັດຕາສ່ວນທີ່ສະແດງດ້ວຍ \\(a : b\\) ເອີ້ນວ່າຫຍັງ?", choices: ["ການຄັດຈ້ອນອັດຕາສ່ວນ","ອັດຕາສ່ວນເດີມ","ຄ່າຂອງອັດຕາສ່ວນ","ສັດສ່ວນ"], answer:"ຄ່າຂອງອັດຕາສ່ວນ"},
+{ question:"ຖ້າຢາກຮູ້ປະລິມານທຽບຖານແມ່ນເຮັດແນວໃດ?", choices: ["ປະລິມານເປັນຖານ × ອັດຕາ (ເທື່ອ)","ປະລິມານທຽບຖານ × ອັດຕາ (ເທື່ອ)","ປະລິມານເປັນຖານ \\(÷\\) ອັດຕາ (ເທື່ອ)","ປະລິມານທຽບຖານ \\(÷\\) ປະລິມານເປັນຖານ"], answer:"ປະລິມານເປັນຖານ × ອັດຕາ (ເທື່ອ)"},
+{ question:"ຜົນຫານຫຼາຍກວ່າ \\(14\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(14 ÷ 1,15\\)","\\(14 ÷ 1,05\\)","\\(14 ÷ 1,51\\)","\\(14 ÷ 0,51\\)"], answer:"\\(14 ÷ 0,51\\)"},
+{ question:"ຈໍານວນທີ່ຫານຂາດໃຫ້ \\(3; 6\\) ແລະ \\(5\\) ພ້ອມກັນແມ່ນຈໍານວນໃນຂໍ້ໃດ?", choices: ["\\(48 402\\)","\\(18 036\\)","\\(36 030\\)","\\(26 021\\)"], answer:"\\(36 030\\)"},
+{"question":"ຈໍານວນທົດສະນິຍົມ \\(0,18\\) ກົງກັບເລກສ່ວນໃນຂໍ້ໃດ?","choices": ["\\(\\frac{18}{10}\\)","\\(\\frac{18}{100}\\)","\\(\\frac{18}{1000}\\)","\\(\\frac{18}{10000}\\)"],"answer":"\\(\\frac{18}{100}\\)"},
+{ question:"ນໍ້າໜັກຂອງຄໍາ \\(8\\) ສະຫຼຶງເທົ່າກັບຈັກບາດ?", choices: ["\\(1\\) ບາດ","\\(2\\) ບາດ","\\(3\\) ບາດ","\\(4\\) ບາດ"], answer:"\\(2\\) ບາດ"},
+{ question:"ຈໍານວນໃດທີ່ຫານຂາດໃຫ້ \\(3; 5\\) ແລະ \\(9\\) ພ້ອມກັນ?", choices: ["\\(1170\\)","\\(2170\\)","\\(3170\\)","\\(5170\\)"], answer:"\\(1170\\)"},
+{ question:"ຈໍານວນໃດທີ່ຫານຂາດໃຫ້ \\(3; 5\\) ແລະ \\(9\\) ພ້ອມກັນ?", choices: ["\\(13069\\)","\\(13050\\)","\\(13170\\)","\\(12050\\)"], answer:"\\(13050\\)"},
+{ question:"ສູດຄິດໄລ່ລວງຮອບຂອງຮູບຈະຕຸລັດແມ່ນຂໍ້ໃດ?", choices: ["\\(C + C\\)","\\(C × C\\)","\\(C × 4\\)","\\(C + 4\\)"], answer:"\\(C × 4\\)"},
+{ question:"ຈໍານວນໃນຂໍ້ໃດແມ່ນຈໍານວນມູນ?", choices: ["\\(1, 3, 5, 11, 12, 17, 19\\)","\\(1, 3, 5, 11, 16, 17, 19\\)","\\(1, 3, 5, 11, 14, 17, 19\\)","\\(1, 3, 5, 11, 13, 17, 19\\)"], answer:"\\(1, 3, 5, 11, 13, 17, 19\\)"},
+{ question:"ຮູບສີ່ແຈສາກມີຈັກແກນເຄິ່ງຄື?", choices: ["ມີ \\(2\\) ແກນເຄິ່ງຄື","ມີ \\(4\\) ແກນເຄິ່ງຄື","ມີ \\(6\\) ແກນເຄິ່ງຄື","ມີ \\(8\\) ແກນເຄິ່ງຄື"], answer:"ມີ \\(2\\) ແກນເຄິ່ງຄື"},
+{ question:"ສູດຄິດໄລ່ບໍລິມາດຂອງຮູບກ້ອນສາກແມ່ນຂໍ້ໃດ?", choices: ["ລວງກວ້າງ × ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ","ຂ້າງ × ຂ້າງ × ຂ້າງ","ຂ້າງ × ຂ້າງ"], answer:"ຂ້າງ × ຂ້າງ × ຂ້າງ"},
+{ question:"ຈໍານວນທີ່ເປັນ \\(10\\) ເທື່ອຂອງ \\(21,3\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(213\\)","\\(2130\\)","\\(21300\\)","\\(213000\\)"], answer:"\\(213\\)"},
+{"question":"ເລກສ່ວນ \\(\\frac{8}{15}\\) ແມ່ນຕົວເລກໃດແມ່ນຈໍານວນພູດ?","choices": ["\\(8\\)","\\(1\\)","\\(5\\)","\\(15\\)"],"answer":"\\(8\\)"},
+{"question":"ເລກສ່ວນໃນຂໍ້ໃດທີ່ມີຄ່າເທົ່າກັບພູດ?","choices": ["\\(\\frac{5}{2}\\)","\\(\\frac{9}{3}\\)","\\(\\frac{8}{6}\\)","\\(\\frac{6}{4}\\)"],"answer":"\\(\\frac{9}{3}\\)"},
+ {"question":"ນໍ້າ \\(2000L\\) ເທົ່າຈັກ \\(m^3\\)?","choices": ["\\(0,2\\) \\(m^3\\)","\\(0,02\\) \\(m^3\\)","\\(2\\) \\(m^3\\)","\\(20\\) \\(m^3\\)"],"answer":"\\(2\\) \\(m^3\\)"},
+{ question:"ສູດຄິດໄລ່ເວລາແມ່ນຂໍ້ໃດ?", choices: ["ໄລຍະທາງ \\(÷\\) ຄວາມໄວ","ໄລຍະທາງ × ຄວາມໄວ","ໄລຍະເວລາ \\(÷\\) ໄລຍະທາງ","ໄລຍະທາງ × ໄລຍະເວລາ"], answer:"ໄລຍະທາງ \\(÷\\) ຄວາມໄວ"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ເນື້ອທີ່ຮູບສີ່ແຈຂ້າງຂະໜານ?", choices: ["ຄວາມຍາວ × ລວງສູງ","ຄວາມກວ້າງ × ລວງສູງ","ພື້ນ × ລວງສູງ","ພື້ນ \\(÷\\) ລວງສູງ"], answer:"ພື້ນ × ລວງສູງ"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ເນື້ອທີ່ຮູບສາມແຈ?", choices: ["ພື້ນ × ລວງສູງ × \\(2\\)","ພື້ນ × ລວງສູງ \\(÷\\) \\(2\\)","ພື້ນ \\(÷\\) ລວງສູງ × \\(2\\)","ພື້ນ \\(÷\\) ລວງສູງ \\(÷\\) \\(2\\)"], answer:"ພື້ນ × ລວງສູງ \\(÷\\) \\(2\\)"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ເນື້ອທີ່ຂອງຮູບຄາງໝູ?", choices: ["(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ","(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສຸງ × \\(2\\)","(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ \\(÷\\) \\(2\\)","(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ + \\(2\\)"], answer:"(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ \\(÷\\) \\(2\\)"},
+{"question":"ຂໍ້ໃດແມ່ນສູດເນື້ອທີ່ຂອງວົງມົນ?","choices": ["ລັດສະໝີ × ລັດສະໝີ × \\(\\pi\\)","ລັດສະໝີ × ລັດສະໝີ \\(÷\\) \\(\\pi\\)","ລັດສະໝີ × ລັດສະໝີ + \\(\\pi\\)","ລັດສະໝີ × ລັດສະໝີ - \\(\\pi\\)"],"answer":"ລັດສະໝີ × ລັດສະໝີ × \\(\\pi\\)"},
+{ question:"ບໍລິມາດຂອງຮູບກັບສາກແມ່ນຂໍ້ໃດ?", choices: ["ລວງກວ້າງ × ລວງຍາວ × ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ + ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ - ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ \\(÷\\) ລວງສູງ"], answer:"ລວງກວ້າງ × ລວງຍາວ × ລວງສູງ"},
+{ question:"ບໍລິມາດຂອງຮູບກ້ອນສາກແມ່ນຂໍ້ໃດ?", choices: ["ຂ້າງ × ຂ້າງ + ຂ້າງ","ຂ້າງ × ຂ້າງ × ຂ້າງ","ຂ້າງ × ຂ້າງ - ຂ້າງ","ຂ້າງ × ຂ້າງ \\(÷\\) ຂ້າງ"], answer:"ຂ້າງ × ຂ້າງ × ຂ້າງ"},
+{ question:"ຂໍ້ໃດແມ່ນການຊອກອັດຕາເທື່ອ?", choices: ["ປະລິມານທຽບຖານ \\(÷\\) ປະລິມານເປັນຖານ","ປະລິມານທຽບຖານ × ປະລິມານເປັນຖານ","ປະລິມານທຽບຖານ + ປະລິມານເປັນຖານ","ປະລິມານທຽບຖານ - ປະລິມານເປັນຖານ"], answer:"ປະລິມານທຽບຖານ \\(÷\\) ປະລິມານເປັນຖານ"},
+{ question:"ຂໍ້ໃດແມ່ນການຊອກຄ່າສະເລ່ຍ?", choices: ["ຜົນລວມທັງໝົດ + ຫານຈໍານວນ","ຜົນລວມທັງໝົດ \\(÷\\) ຫານຈໍານວນ","ຜົນລວມທັງໝົດ - ຫານຈໍານວນ","ຜົນລວມທັງໝົດ × ຫານຈໍານວນ"], answer:"ຜົນລວມທັງໝົດ \\(÷\\) ຫານຈໍານວນ"},
+{ question:"ຂໍ້ໃດແມ່ນການຊອກຫາຄວາມໄວ?", choices: ["ໄລຍະທາງ \\(÷\\) ເວລາ","ໄລຍະທາງ × ເວລາ","ໄລຍະທາງ - ເວລາ","ໄລຍະທາງ + ເວລາ"], answer:"ໄລຍະທາງ \\(÷\\) ເວລາ"},
+{ question:"ຂໍ້ໃດແມ່ນການຊອກໄລຍະທາງ?", choices: ["ຄວາມໄວ \\(÷\\) ເວລາ","ຄວາມໄວ × ເວລາ","ຄວາມໄວ - ເວລາ","ຄວາມໄວ + ເວລາ"], answer:"ຄວາມໄວ × ເວລາ"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ຊອກເນື້ອທີ່ຂອງຮູບດອກຈັນ?", choices: ["ເສັ້ນເນັ່ງຈອມ × ເສັ້ນເນັ່ງຈອມ × \\(2\\)","ເສັ້ນເນັ່ງຈອມ × ເສັ້ນເນັ່ງຈອມ \\(÷\\) \\(2\\)","ເສັ້ນເນັ່ງຈອມ × ເສັ້ນເນັ່ງຈອມ + \\(2\\)","ເສັ້ນເນັ່ງຈອມ × ເສັ້ນເນັ່ງຈອມ - \\(2\\)"], answer:"ເສັ້ນເນັ່ງຈອມ × ເສັ້ນເນັ່ງຈອມ \\(÷\\) \\(2\\)"},
+{"question":"ຂໍ້ໃດແມ່ນສູດຊອກລວງຮອບຂອງຮູບວົງມົນ?","choices": ["ເສັ້ນຜ່ານກາງ × \\(\\pi\\)","ເສັ້ນຜ່ານກາງ \\(÷\\) \\(\\pi\\)","ເສັ້ນຜ່ານກາງ + \\(\\pi\\)","ເສັ້ນຜ່ານກາງ - \\(\\pi\\)"],"answer":"ເສັ້ນຜ່ານກາງ × \\(\\pi\\)"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຊອກປະລິມານທຽບຖານ?", choices: ["ປະລິມານເປັນຖານ \\(÷\\) ອັດຕາເທື່ອ","ປະລິມານເປັນຖານ × ອັດຕາເທື່ອ","ປະລິມານເປັນຖານ - ອັດຕາເທື່ອ","ປະລິມານເປັນຖານ + ອັດຕາເທື່ອ"], answer:"ປະລິມານເປັນຖານ × ອັດຕາເທື່ອ"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ປະລິມານເປັນຖານ?", choices: ["ປະລິມານທຽບຖານ \\(÷\\) ອັດຕາເທື່ອ","ປະລິມານທຽບຖານ × ອັດຕາເທື່ອ","ປະລິມານທຽບຖານ - ອັດຕາເທື່ອ","ປະລິມານທຽບຖານ + ອັດຕາເທື່ອ"], answer:"ປະລິມານທຽບຖານ \\(÷\\) ອັດຕາເທື່ອ"},
+{ question:"ຈໍານວນທີ່ຫຼາຍກວ່າ \\(75,242\\) ແມ່ນຈໍານວນໃດ?", choices: ["\\(75,166\\)","\\(75,238\\)","\\(75,197\\)","\\(75,25\\)"], answer:"\\(75,25\\)"},
+{ question:"ຜົນບວກຂອງ \\(32,00 + 9,68\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(40,68\\)","\\(41,68\\)","\\(4,168\\)","\\(416,8\\)"], answer:"\\(41,68\\)"},
+{ question:"ຜົນຄູນຂອງ \\(7,2 × 3,6\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(2592\\)","\\(2,592\\)","\\(25,92\\)","\\(259,2\\)"], answer:"\\(25,92\\)"},
+{ question:"ຜົນຄູນຫຼາຍກວ່າ \\(6\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(6 × 0,12\\)","\\(6 × 1,3\\)","\\(6 × 0,9\\)","\\(6 × 0,18\\)"], answer:"\\(6 × 1,3\\)"},
+{ question:"ຜົນຫານຫຼາຍກວ່າ \\(12\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(12 ÷ 2\\)","\\(12 ÷ 1,5\\)","\\(12 ÷ 0,8\\)","\\(12 ÷ 2,02\\)"], answer:"\\(12 ÷ 0,8\\)"},
+{"question":"ອັດຕາທີ່ສະແດງດ້ວຍຈໍານວນທົດສະນິຍົມ \\(0,04\\) ເທົ່າກັບເລກສ່ວນຮ້ອຍໃນຂໍໃດ?","choices": ["\\(4\\%\\)","\\(40\\%\\)","\\(400\\%\\)","\\(4000\\%\\)"],"answer":"\\(4\\%\\)"},
+{ question:"ອັດຕາທີ່ສະແດງດ້ວຍ \\(50%\\) ເທົ່າກັບຈໍານວນທົດສະນິຍົມໃນຂໍ້ໃດ?", choices: ["\\(0,5\\)","\\(0,05\\)","\\(0,005\\)","\\(0,0005\\)"], answer:"\\(0,5\\)"},
+{ question:"ສູດຄິດໄລ່ເນື້ອທີ່ຂອງຮູບສີ່ແຈຂ້າງຂະໜານແມ່ນຂໍ້ໃດ?", choices: ["ພື້ນ × ລວງສູງ \\(÷\\) \\(2\\)","ພື້ນ × ລວງສູງ","ເສັ້ນເນັ່ງຈອມ × ເສັ້ນເນັ່ງຈອມ \\(÷\\) \\(2\\)","ລວງຍາວ × ລວງກວ້າງ"], answer:"ພື້ນ × ລວງສູງ"},
+{ question:"ທະວີຄູນຮ່ວມໜ້ອຍສຸດຂອງ \\(3\\) ແລະ \\(5\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(9\\)","\\(10\\)","\\(12\\)","\\(15\\)"], answer:"\\(15\\)"},
+{ question:"ອັດຕາສ່ວນ \\(3 : 8\\) ມີຄ່າເທົ່າກັບອັດຕາສ່ວນໃນຂໍ້ໃດ?", choices: ["\\(6 : 10\\)","\\(6 : 12\\)","\\(6 : 14\\)","\\(6 : 16\\)"], answer:"\\(6 : 16\\)"},
+{"question":"ຈໍານວນ \\(0,002\\) ມີຄ່າເທົ່າກັບເລກສ່ວນໃນຂໍ້ໃດ?","choices": ["\\(\\frac{2}{1}\\)","\\(\\frac{2}{10}\\)","\\(\\frac{2}{100}\\)","\\(\\frac{2}{1000}\\)"],"answer":"\\(\\frac{2}{1000}\\)"},
+{"question":"ຈໍານວນປີ້ນຂອງ \\(6\\) ແມ່ນຂໍ້ໃດ?","choices": ["\\(\\frac{6}{1}\\)","\\(\\frac{6}{2}\\)","\\(\\frac{1}{6}\\)","\\(\\frac{2}{6}\\)"],"answer":"\\(\\frac{1}{6}\\)"},
+{"question":"ເລກສ່ວນ \\(\\frac{10}{4}\\) ກົງກັບເລກສ່ວນປະສົມໃນຂໍ້ໃດ?","choices": ["\\(2\\frac{1}{4}\\)","\\(2\\frac{2}{4}\\)","\\(2\\frac{3}{4}\\)","\\(2\\frac{4}{4}\\)"],"answer":"\\(2\\frac{2}{4}\\)"},
+{"question":"ເນື້ອທີ່ \\(25 000 m\\)\\(^{2}\\) ເທົ່າຈັກ \\(ha?\\)","choices": ["\\(0,25 ha\\)","\\(25 ha\\)","\\(2,5 ha\\)","\\(250 ha\\)"],"answer":"\\(2,5 ha\\)"},
+{ question:"\\(X : 3 = 10 : 6\\) ຈໍານວນທີ່ແທນໃສ່ \\(X\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(3\\)","\\(6\\)","\\(5\\)","\\(7\\)"], answer:"\\(5\\)"},
+{ question:"ຈໍານວນ \\(25,0139\\) ກົງກັບຄໍາອ່ານໃນຂໍ້ໃດ?", choices: ["ຊາວຫ້າຈຸດໜຶ່ງຮ້ອຍສາມສິບເກົ້າ","ຊາວຫ້າຈຸດໜຶ່ງພັນສາມສິບເກົ້າ","ຊາວຫ້າຈຸດສູນໜຶ່ງສາມເກົ້າ","ຊາວຫ້າຈຸດໜຶ່ງສາມເກົ້າ"], answer:"ຊາວຫ້າຈຸດໜຶ່ງຮ້ອຍສາມສິບເກົ້າ"},
+{ question:"ຮູບສີ່ແຈມີເສັ້ນເນັ່ງຈອມຈັກເສັ້ນ?", choices: ["\\(1\\) ເສັ້ນ","\\(2\\) ເສັ້ນ","\\(3\\) ເສັ້ນ","\\(4\\) ເສັ້ນ"], answer:"\\(2\\) ເສັ້ນ"},
+{ question:"ຜົນຄູນໜ້ອຍກວ່າ \\(6\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(6 × 0,75\\)","\\(6 × 1,05\\)","\\(6 × 2,04\\)","\\(6 × 1,2 \\)"], answer:"\\(6 × 0,75\\)"},
+{ question:"ຜົນຫານຫຼາຍກວ່າ \\(5\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(5 ÷ 1,5\\)","\\(5 ÷ 1\\)","\\(5 ÷ 0,25\\)","\\(5 ÷ 2\\)"], answer:"\\(5 ÷ 0,25\\)"},
+{"question":"ເລກ \\(6\\) ຢູ່ໃນເລກສ່ວນ \\(\\frac{6}{3}\\) ເອີ້ນວ່າຫຍັງ?","choices": ["ຈໍານວນພູດ","ພູດ","ເສດສ່ວນ","ທົດສະນິຍົມ"],"answer":"ຈໍານວນພູດ"},
+{"question":"ເລກສ່ວນທີ່ມີຄ່າເທົ່າກັບຈໍານວນຖ້ວນແມ່ນຂໍ້ໃດ?","choices": ["\\(\\frac{7}{2}\\)","\\(\\frac{9}{4}\\)","\\(\\frac{8}{6}\\)","\\(\\frac{6}{3}\\)"],"answer":"\\(\\frac{6}{3}\\)"},
+{"question":"ບໍລິມາດຂອງຮູບກ້ອນສາກ ເພິ່ນສະແດງດ້ວຍຫົວໜ່ວຍໃດ?","choices": ["\\(m\\)","\\(g\\)","\\(m^{2}\\)","\\(m^{3}\\)"],"answer":"\\(m^{3}\\)"},
+{"question":"ນໍ້າ \\(3 m^{3}\\) ເທົ່າຈັກ \\(L?\\)","choices": ["\\(30 L\\)","\\(300 L\\)","\\(3000 L\\)","\\(30000 L\\)"],"answer":"\\(3000 L\\)"},
+{ question:"ຄໍາຕອບຂອງປະໂຫຍກສັນຍະລັກ \\(6 ÷ 0,5\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(12\\)","\\(1,2\\)","\\(0,12\\)","\\(1,02\\)"], answer:"\\(12\\)"},
+{ question:"ຄໍາຕອບຂອງປະໂຫຍກສັນຍະລັກ \\(1,75 × 0,8\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(1,4\\)","\\(14\\)","\\(140\\)","\\(1400\\)"], answer:"\\(1,4\\)"},
+{"question":"ຈໍານວນ \\(\\frac{58}{8}\\) ກົງກັບຈໍານວນທົດສະນິຍົມໃນຂໍ້ໃດ?","choices": ["\\(7,2\\)","\\(7,25\\)","\\(7,02\\)","\\(7,5\\)"],"answer":"\\(7,25\\)"},
+{"question":"ຈໍານວນປີ້ນຂອງ \\(5\\) ແມ່ນຂໍ້ໃດ?","choices": ["\\(\\frac{20}{2}\\)","\\(\\frac{1}{5}\\)","\\(\\frac{5}{1}\\)","\\(\\frac{20}{4}\\)"],"answer":"\\(\\frac{1}{5}\\)"},
+{"question":"ຈໍານວນປີ້ນຂອງ \\(0,3\\) ແມ່ນຂໍ້ໃດ?","choices": ["\\(\\frac{3}{1}\\)","\\(\\frac{1}{3}\\)","\\(\\frac{3}{10}\\)","\\(\\frac{10}{3}\\)"],"answer":"\\(\\frac{10}{3}\\)"},
+{ question:"ປະໂຫຍກສັນຍະລັກ \\(1×4 + 0,1×7 + 0,01× 5\\) ແມ່ນອົງປະກອບຂອງຈໍານວນໃດ?", choices: ["\\(4,75\\)","\\(4,05\\)","\\(4,705\\)","\\(4,751\\)"], answer:"\\(4,75\\)"},
+{"question":"ເລກສ່ວນ \\(\\frac{8}{15}\\) ແມ່ນຕົວເລກໃດເປັນຈໍານວນພູດ?","choices": ["\\(8\\)","\\(1\\)","\\(5\\)","\\(15\\)"],"answer":"\\(8\\)"},
+{"question":"ເນື້ອທີ່ຂອງຮູບສີ່ແຈສາກ ເພິ່ນສະແດງດ້ວຍຫົວໜ່ວຍໃດ?","choices": ["\\(m\\)","\\(L\\)","\\(m^{2}\\)","\\(m^{3}\\)"],"answer":"\\(m^{2}\\)"},
+{ question:"ຜົນຫານໜ້ອຍກວ່າ \\(14\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(14 ÷ 0,5\\)","\\(14 ÷ 0,15\\)","\\(14 ÷ 0,51\\)","\\(14 ÷ 1,5\\)"], answer:"\\(14 ÷ 1,5\\)"},
+{ question:"ປະໂຫຍກສັນຍາລັກ \\(1 × 6 + 0,1 × 2 + \\)\\(0,01 × 4 + 0,001 × 5\\) ແມ່ນອົງປະກອບຂອງຈໍານວນໃດ?", choices: ["\\(6,25\\)","\\(6,025\\)","\\(6,245\\)","\\(6,52\\)"], answer:"\\(6,025\\)"},
+{ question:"ຮູບເລຂາຄະນິດທີ່ສາມາດເຕັງຊ້ອນກັນພໍດີ ເອີ້ນວ່າຫຍັງ?", choices: ["ທຽບເທົ່າກັນ","ຂະໜານກັນ","ຕັ້ງສາກກັນ","ການຂະຫຍາຍຮູບ"], answer:"ທຽບເທົ່າກັນ"},
+{ question:"ຜົນຄູນທີ່ໜ້ອຍກວ່າ \\(7\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(7 × 0,78\\)","\\(7 × 1,12\\)","\\(7 × 1,07\\)","\\(7 × 2,01\\)"], answer:"\\(7 × 0,78\\)"},
+{"question":"ການຄັດຈ້ອນເລກສ່ວນ \\(\\frac{84}{32}\\) ຂໍ້ໃດຖືກຕ້ອງທີ່ສຸດ?","choices": ["\\(\\frac{19}{8}\\)","\\(\\frac{20}{8}\\)","\\(\\frac{21}{8}\\)","\\(\\frac{22}{8}\\)"],"answer":"\\(\\frac{21}{8}\\)"},
+{"question":"ເລກສ່ວນໃນຂໍ້ໃດທີ່ມີຄ່າເທົ່າກັບຈໍານວນຖ້ວນ?","choices": ["\\(\\frac{3}{2}\\)","\\(\\frac{8}{4}\\)","\\(\\frac{6}{8}\\)","\\(\\frac{9}{4}\\)"],"answer":"\\(\\frac{8}{4}\\)"},
+{"question":"ນໍ້າ \\(3000 L\\) ເທົ່າຈັກ \\(m^{3}\\)?","choices": ["\\(0,3 m^{3}\\)","\\(0,03 m^{3}\\)","\\(3 m^{3}\\)","\\(30 m^{3}\\)"],"answer":"\\(3 m^{3}\\)"},
+{ question:"ຈໍານວນທີ່ໃກ້ຄຽງທີ່ສຸດກັບ \\(1800\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(1738\\)","\\(1890\\)","\\(1765\\)","\\(1838\\)"], answer:"\\(1765\\)"},
+{ question:"ປະໂຫຍກສັນຍະລັກທີ່ເປັນອົງປະກອບຂອງ \\(61,508\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(10 × 6 + 1 × 10 + \\)\\(0,1 × 5 + 0,001 × 8 \\)","\\(10 × 6 + 1 × 1 + \\)\\(0,1 × 5 + 0,001 × 8 \\)","\\(10 × 6 + 1 × 1 + \\)\\(0,1 × 5 + 0,01 × 8\\)","\\(10 × 6 + 1 × 1 + 0,01\\)\\( × 5 + 0,001 × 8\\)"], answer:"\\(10 × 6 + 1 × 1 + 0,01\\)\\( × 5 + 0,001 × 8\\)"},
+{"question":"ຜົນການຄິດໄລ່ \\(\\frac{10}{24}\\) \\(× 0,72 ÷ 5\\) ກົງກັບຄໍາຕອບຂໍ້ໃດ?","choices": ["\\(36,86\\)","\\(0,56\\)","\\(0,06\\)","\\(1,5\\)"],"answer":"\\(0,06\\)"},
+{ question:"ຮູບສາມແຈສະເໝີມີຈັກເເກນເຄິ່ງຄື?", choices: ["\\(1\\) ແກນເຄິ່ງຄື","\\(2\\) ແກນເຄິ່ງຄື","\\(3\\) ແກນເຄິ່ງຄື","\\(4\\)  ແກນເຄິ່ງຄື"], answer:"\\(3\\) ແກນເຄິ່ງຄື"},
+{ question:"ມີພາຊະນະທີ່ເປັນຮູບກ້ອນສາກເຊິ່ງຄວາມຍາວຂອງຂ້າງແມ່ນ \\(6 cm.\\) ຖ້າຖອກນໍ້າໃສ່ຈົນເຕັມຈະມີນໍ້າຈັກ\\( L?\\)", choices: ["\\(0,216 L\\)","\\(216 L\\)","\\(2160 L\\)","\\(2,16 L\\)"], answer:"\\(0,216 L\\)"},
+{ question:"ໃນປະໂຫຍກສັນຍະລັກ \\(30 × X = 735\\) ຈໍານວນທີ່ແທນໃສ່ \\(X\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(24,5\\)","\\(25,4 \\)","\\(24\\)","\\(25\\)"], answer:"\\(24,5\\)"},
+{ question:"ການສະແດງອັດຕາສ່ວນເທົ່າກັນທີ່ບໍ່ຖືກຕ້ອງເເມ່ນຂໍ້ໃດ?", choices: ["\\(8 : 12 = 20 : 30 \\)","\\(14 : 16 = 56 : 64\\)","\\(9 : 7 = 108 : 84\\)","\\(6 : 13 = 18 : 33 \\)"], answer:"\\(6 : 13 = 18 : 33 \\)"},
+{ question:"ອັດຕາສ່ວນ \\(16 : 8\\) ມີຄ່າເທົ່າກັບອັດຕາສ່ວນໃນຂໍ້ໃດ?", choices: ["\\(10 : 8 \\)","\\(8 : 6\\)","\\(6 : 4\\)","\\(4:2\\)"], answer:"\\(4:2\\)"},
+{ question:"ຜົນຄູນທີ່ໜ້ອຍກ່ອນ \\(7\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(7 × 0,32\\)","\\(7 × 1,45\\)","\\(7 × 1,09\\)","\\(7 × 2,31\\)"], answer:"\\(7 × 0,32\\)"},
+{"question":"ຈໍານວນທົດສະນິຍົມ \\(0,68\\) ກົງກັບເລກສ່ວນໃນຂໍ້ໃດ?","choices": ["\\(\\frac{68}{10}\\)","\\(\\frac{68}{100}\\)","\\(\\frac{68}{1000}\\)","\\(\\frac{68}{10000}\\)"],"answer":"\\(\\frac{68}{100}\\)"},
+{ question:"ຜົນການຄິດໄລ່ \\(2 × 10 × 18 + 6 + 23 + 11\\) ກົງກັບຄໍາຕອບຂໍ້ໃດ?", choices: ["\\(420\\)","\\(400\\)","\\(390\\)","\\(389\\)"], answer:"\\(400\\)"},
+{ question:"ສາມຈໍານວນໃດທີ່ມີຜົນຄູນເທົ່າກັບ \\(252\\)?", choices: ["\\(4; 7; 9\\)","\\(4; 6; 5\\)","\\(7; 9; 6\\)","\\(4, 9; 2\\)"], answer:"\\(4; 7; 9\\)"},
+{ question:"ຈໍານວນໃດທີ່ຫານຂາດໃຫ້ \\(2; 4\\) ແລະ \\(6\\) ພ້ອມກັນ?", choices: ["\\(480\\)","\\(517\\)","\\(370\\)","\\(550\\)"], answer:"\\(480\\)"},
+{ question:"ຈໍານວນທີ່ເປັນ \\(10\\) ເທື່ອຂອງ \\(3,28\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(32,8\\)","\\(328\\)","\\(3280\\)","\\(32800\\)"], answer:"\\(32,8\\)"},
+{"question":"ເລກສ່ວນ \\(\\frac{12}{3}\\) ແມ່ນຕົວເລກໃດແມ່ນພູດ?","choices": ["\\(2\\)","\\(3\\)","\\(4\\)","\\(12\\)"],"answer":"\\(3\\)"},
+{"question":"ເລກສ່ວນໃນຂໍ້ໃດທີ່ມີຄ່າເທົ່າກັບພູດ?","choices": ["\\(\\frac{18}{9}\\)","\\(\\frac{16}{4}\\)","\\(\\frac{14}{7}\\)","\\(\\frac{4}{4}\\)"],"answer":"\\(\\frac{16}{4}\\)"},
+{"question":"ອັດຕາທີ່ສະແດງດ້ວຍຈໍານວນທົດສະນິຍົມ \\(0,8\\) ເທົ່າກັບເລກສ່ວນຮ້ອຍໃນຂໍໃດ?","choices": ["\\(8\\%\\)","\\(80\\%\\)","\\(800\\%\\)","\\(8000\\%\\)"],"answer":"\\(80\\%\\)"},
+{ question:"ອັດຕາທີ່ສະແດງດ້ວຍ \\(25%\\) ເທົ່າກັບຈໍານວນທົດສະນິຍົມໃນຂໍ້ໃດ?", choices: ["\\(0,25\\)","\\(0,5\\)","\\(0,75\\)","\\(1.5\\)"], answer:"\\(0,25\\)"},
+{ question:"ອັດຕາສ່ວນ \\(2 : 4\\) ມີຄ່າເທົ່າກັບອັດຕາສ່ວນໃນຂໍ້ໃດ?", choices: ["\\(6 : 4\\)","\\(6 : 6\\)","\\(6 : 9\\)","\\(6 : 12\\)"], answer:"\\(6 : 12\\)"},
+{"question":"ຈໍານວນ \\(0,05\\) ມີຄ່າເທົ່າກັບເລກສ່ວນໃນຂໍ້ໃດ?","choices": ["\\(\\frac{5}{1}\\)","\\(\\frac{5}{10}\\)","\\(\\frac{5}{100}\\)","\\(\\frac{5}{1000}\\)"],"answer":"\\(\\frac{5}{100}\\)"},
+{ question:"ຈໍານວນ \\(32.461\\) ກົງກັບຄໍາອ່ານໃນຂໍ້ໃດ?", choices: ["ສາມສິບສອງຈຸດສີ່ຫົກໜຶ່ງ","ສາມສິບສອງຈຸດສີ່ຮ້ອຍຫົກສິບເອັດ","ສາມສິບສອງຈຸດສີ່ຮ້ອຍຫົກສິບໜຶ່ງ","ສາມສອງຈຸດສີ່ຫົກໜຶ່ງ"], answer:"ສາມສິບສອງຈຸດສີ່ຫົກໜຶ່ງ"},
+{"question":"ເລກ \\(4\\) ຢູ່ໃນເລກສ່ວນ \\(\\frac{10}{4}\\) ເອີ້ນວ່າຫຍັງ?","choices": ["ຈໍານວນພູດ","ພູດ","ເສດສ່ວນ","ທົດສະນິຍົມ"],"answer":"ພູດ"},
+{"question":"ນໍ້າ \\(9 m^{3}\\) ເທົ່າຈັກ \\(L?\\)","choices": ["\\(90 L\\)","\\(900 L\\)","\\(9000 L\\)","\\(90000 L\\)"],"answer":"\\(9000 L\\)"},
+{ question:"ຄໍາຕອບຂອງປະໂຫຍກສັນຍະລັກ \\(12 ÷ 5\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(2.4\\)","\\(4.2\\)","\\(24\\)","\\(42\\)"], answer:"\\(2.4\\)"},
+{ question:"ຄໍາຕອບຂອງປະໂຫຍກສັນຍະລັກ \\(2,52 × 0,65\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(1.638\\)","\\(16.38\\)","\\(163.8\\)","\\(1638\\)"], answer:"\\(1.638\\)"},
+{"question":"ຈໍານວນ \\(\\frac{10}{4}\\) ກົງກັບຈໍານວນທົດສະນິຍົມໃນຂໍ້ໃດ?","choices": ["\\(5,2\\)","\\(2,5\\)","\\(1,5\\)","\\(1,2\\)"],"answer":"\\(2,5\\)"},
+{ question:"ຜົນຫານໜ້ອຍກວ່າ \\(6\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(6 ÷ 0,3\\)","\\(6 ÷ 0,58\\)","\\(6 ÷ 0,99\\)","\\(6 ÷ 1,1\\)"], answer:"\\(6 ÷ 1,1\\)"},
+{"question":"ເລກສ່ວນ \\(\\frac{9}{4}\\) ແມ່ນຕົວເລກໃດເປັນຈໍານວນພູດ?","choices": ["\\(9\\)","\\(7\\)","\\(4\\)","\\(2\\)"],"answer":"\\(9\\)"},
+{ question:"ຜົນຫານໜ້ອຍກວ່າ \\(4\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(4 ÷ 0,4\\)","\\(4 ÷ 0,76\\)","\\(4 ÷ 0,30\\)","\\(4 ÷ 1,5\\)"], answer:"\\(4 ÷ 1,5\\)"},
+{ question:"ຜົນຄູນທີ່ໜ້ອຍກວ່າ \\(6\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(6 × 0,32\\)","\\(6 × 1,21\\)","\\(6 × 1,70\\)","\\(6 × 3,10\\)"], answer:"\\(6 × 0,32\\)"},
+{ question:"ຜົນຄູນທີ່ໜ້ອຍກວ່າ \\(15\\) ແມ່ນຂໍ້ໃດ?", choices: ["\\(15 × 0,43\\)","\\(15 × 1,32\\)","\\(15 × 1,65\\)","\\(15 × 2,71\\)"], answer:"\\(15 × 0,43\\)"},
+{"question":"ເລກສ່ວນໃນຂໍ້ໃດທີ່ມີຄ່າເທົ່າກັບຈໍານວນຖ້ວນ?","choices": ["\\(\\frac{4}{3}\\)","\\(\\frac{16}{8}\\)","\\(\\frac{7}{4}\\)","\\(\\frac{12}{5}\\)"],"answer":"\\(\\frac{16}{8}\\)"},
+{"question":"ນໍ້າ \\(2000 L\\) ເທົ່າຈັກ \\(m^{3}\\)?","choices": ["\\(0,2 m^{3}\\)","\\(0,02 m^{3}\\)","\\(2 m^{3}\\)","\\(20 m^{3}\\)"],"answer":"\\(2 m^{3}\\)"},
+{ question:"ມີພາຊະນະທີ່ເປັນຮູບກ້ອນສາກເຊິ່ງຄວາມຍາວຂອງຂ້າງແມ່ນ \\(4 cm.\\) ຖ້າຖອກນໍ້າໃສ່ຈົນເຕັມຈະມີນໍ້າຈັກ\\( L?\\)", choices: ["\\(0,064 L\\)","\\(0.64 L\\)","\\(640 L\\)","\\(6,4 L\\)"], answer:"\\(0,064 L\\)"},
+{ question:"ໃນປະໂຫຍກສັນຍະລັກ \\(7 × X = 21\\) ຈໍານວນທີ່ແທນໃສ່ \\(X\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(31\\)","\\(13 \\)","\\(3\\)","\\(1\\)"], answer:"\\(3\\)"},
+{ question:"ມີພາຊະນະທີ່ເປັນຮູບກ້ອນສາກເຊິ່ງຄວາມຍາວຂອງຂ້າງແມ່ນ \\(2 cm.\\) ຖ້າຖອກນໍ້າໃສ່ຈົນເຕັມຈະມີນໍ້າຈັກ\\( L?\\)", choices: ["\\(0,80 L\\)","\\(0.8 L\\)","\\(8 L\\)","\\(80 L\\)"], answer:"\\(8 L\\)"},
+{ question:"ໃນປະໂຫຍກສັນຍະລັກ \\(59 + X = 99\\) ຈໍານວນທີ່ແທນໃສ່ \\(X\\) ແມ່ນເທົ່າໃດ?", choices: ["\\(40\\)","\\(4\\)","\\(0.4\\)","\\(0.40\\)"], answer:"\\(40\\)"},
+{ question:"ນໍ້າໜັກຂອງຄໍາ \\(8\\) ສະຫຼຶງເທົ່າກັບຈັກບາດ?", choices: ["\\(1\\) ບາດ","\\(2\\) ບາດ","\\(3\\) ບາດ","\\(4\\) ບາດ"], answer:"\\(2\\) ບາດ"},
+{ question:"ສູດຄິດໄລ່ລວງຮອບຂອງຮູບຈະຕຸລັດແມ່ນຂໍ້ໃດ?", choices: ["\\(C + C\\)","\\(C × C\\)","\\(C × 4\\)","\\(C + 4\\)"], answer:"\\(C × 4\\)"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ເນື້ອທີ່ຮູບສີ່ແຈຂ້າງຂະໜານ?", choices: ["ຄວາມຍາວ × ລວງສູງ","ຄວາມກວ້າງ × ລວງສູງ","ພື້ນ × ລວງສູງ","ພື້ນ \\(÷\\) ລວງສູງ"], answer:"ພື້ນ × ລວງສູງ"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ເນື້ອທີ່ຮູບສາມແຈ?", choices: ["ພື້ນ × ລວງສູງ × \\(2\\)","ພື້ນ × ລວງສູງ \\(÷\\) \\(2\\)","ພື້ນ \\(÷\\) ລວງສູງ × \\(2\\)","ພື້ນ \\(÷\\) ລວງສູງ \\(÷\\) \\(2\\)"], answer:"ພື້ນ × ລວງສູງ \\(÷\\) \\(2\\)"},
+{ question:"ຂໍ້ໃດແມ່ນສູດຄິດໄລ່ເນື້ອທີ່ຂອງຮູບຄາງໝູ?", choices: ["(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ","(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສຸງ × \\(2\\)","(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ \\(÷\\) \\(2\\)","(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ + \\(2\\)"], answer:"(ພື້ນນ້ອຍ + ພື້ນໃຫຍ່) × ລວງສູງ \\(÷\\) \\(2\\)"},
+{"question":"ຂໍ້ໃດແມ່ນສູດເນື້ອທີ່ຂອງວົງມົນ?","choices": ["ລັດສະໝີ × ລັດສະໝີ × \\(\\pi\\)","ລັດສະໝີ × ລັດສະໝີ \\(÷\\) \\(\\pi\\)","ລັດສະໝີ × ລັດສະໝີ + \\(\\pi\\)","ລັດສະໝີ × ລັດສະໝີ - \\(\\pi\\)"],"answer":"ລັດສະໝີ × ລັດສະໝີ - \\(\\pi\\)"},
+{ question:"ບໍລິມາດຂອງຮູບກັບສາກແມ່ນຂໍ້ໃດ?", choices: ["ລວງກວ້າງ × ລວງຍາວ × ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ + ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ - ລວງສູງ","ລວງກວ້າງ × ລວງຍາວ \\(÷\\) ລວງສູງ"], answer:"ລວງກວ້າງ × ລວງຍາວ × ລວງສູງ"},
+{ question:"ບໍລິມາດຂອງຮູບກ້ອນສາກແມ່ນຂໍ້ໃດ?", choices: ["ຂ້າງ × ຂ້າງ + ຂ້າງ","ຂ້າງ × ຂ້າງ × ຂ້າງ","ຂ້າງ × ຂ້າງ - ຂ້າງ","ຂ້າງ × ຂ້າງ \\(÷\\) ຂ້າງ"], answer:"ຂ້າງ × ຂ້າງ × ຂ້າງ"},
+{ question:"ຂໍ້ໃດແມ່ນການຊອກຫາຄວາມໄວ?", choices: ["ໄລຍະທາງ \\(÷\\) ເວລາ","ໄລຍະທາງ × ເວລາ","ໄລຍະທາງ - ເວລາ","ໄລຍະທາງ + ເວລາ"], answer:"ໄລຍະທາງ \\(÷\\) ເວລາ"},
+{ question:"ຂໍ້ໃດແມ່ນການຊອກໄລຍະທາງ?", choices: ["ຄວາມໄວ \\(÷\\) ເວລາ","ຄວາມໄວ × ເວລາ","ຄວາມໄວ - ເວລາ","ຄວາມໄວ + ເວລາ"], answer:"ຄວາມໄວ × ເວລາ"},
+      ],
+      sci: [
+{ question: "ຂໍ້ໃດທີ່ສະແດງເຖິງຄວາມຮູ້ບຸນຄຸນຕໍ່ ປູ່, ຍ່າ, ຕາ, ນາຍ? ", choices: ["ເວົ້າສຽງແຂງກະດ້າງ", "ຄວາມແຈ່ມໃສ", "ເບິ່ງເພິ່ນເວລາເຈັບເປັນ", "ເວົ້າສຽງດັງ "], answer: "ເບິ່ງເພິ່ນເວລາເຈັບເປັນ" },
+{ question: "ຂໍ້ໃດລຸ່ມນີ້ສະແດງເຖິງການເປັນເພື່ອນທີ່ດີ? ", choices: ["ກ່າຍບົດຮຽນ ແລະ ແກ້ບົດເຝິກຫັດໃຫ້ໝູ່", "ຮັກແພງສາມັກຄີຊ່ວຍເຫຼືອກັນດ້ວຍຄວາມຈິງໃຈ", "ອິດສາບັງບຽດ, ສັດຊື່ຕໍ່ໝູ່ເພື່ອນ", "ເຫັນໝູ່ອອກແຮງງານໂຕເອງເບິ່ງເສີຍ"], answer: "ຮັກແພງສາມັກຄີຊ່ວຍເຫຼືອກັນດ້ວຍຄວາມຈິງໃຈ" },
+{ question: "ອະໄວຍະວະໃດທີ່ຟອກເລືອດດໍາໃຫ້ກາຍເປັນເລືອດແດງ? ", choices: ["ປອດ", "ຕັບ", "ຫົວໃຈ", "ໝາກໄຂ່ຫຼັງ"], answer: "ປອດ" },
+{ question: "ການເກີດໃໝ່ຂອງສິ່ງທີ່ມີຊີວິດທີ່ຍັງຮັກສາລັກສະນະພັນຂອງ ພໍ່, ແມ່ ເອີ້ນວ່າຫຍັງ? ", choices: ["ການຂະຫຍາຍພັນ", "ການເລືອກ ພໍ່, ແມ່ພັນ", "ການປັບປຸງພັນ", "ການສືບພັນ"], answer: "ການສືບພັນ" },
+{ question: "ຂໍ້ໃດແມ່ນສັດທີ່ມີກະດູກສັນຫຼັງທັງໝົດ? ", choices: ["ງົວ, ຄວາຍ, ບົ້ງ", "ງົວ, ຄວາຍ, ປູ", "ງົວ, ຄວາຍ, ຊ້າງ", "ງົວ, ປີງ, ຫອຍ"], answer: "ງົວ, ຄວາຍ, ຊ້າງ" },
+{ question: "ທາດເຄມີປະເພດໃດທີ່ຈັດເຂົ້າໃນຈໍາພວກບໍລິໂພກ? ", choices: ["ນໍ້າຢາລ້າງຈານ", "ນໍ້າອັດລົມ", "ນໍ້າຫອມ", "ນໍ້າມັນແອດຊັງ"], answer: "ນໍ້າອັດລົມ" },
+{ question: "ເຄື່ອງໃຊ້ໄຟຟ້າລຸ່ມນີ້ແມ່ນອັນໃດທີ່ປ່ຽນເປັນພະລັງງານໄຟຟ້າ ແລະ ເປັນພະລັງງານກົນຈັກ? ", choices: ["ໝໍ້ຕົ້ມນໍາໄຟຟ້າ", "ເຄື່ອງບົດໝາກໄມ້", "ດອກໄຟຟ້າ", "ໂທລະສັບ"], answer: "ເຄື່ອງບົດໝາກໄມ້" },
+{ question: "ວັນສ້າງຕັ້ງ ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ ແມ່ນວັນທີ, ເດືອນ, ປີໃດ? ", choices: ["2 ທັນວາ 1975", "22 ມີນາ 1955", "20 ມັງກອນ 1949", "23 ສິງຫາ 1975"], answer: "2 ທັນວາ 1975" },
+{ question: "ຂໍ້ໃດແມ່ນ ວິທີປ້ອງກັນພະຍາດໂຄວິດ 19 ທີ່ຖືກຕ້ອງ? ", choices: ["ລ້າງມືດ້ວຍນໍ້າທໍາມະດາ, ໃສ່ຜ້າອັດປາກ, ຮັກສາໄລຍະຫ່າງ 1 ແມັດຂຶ້ນໄປ", "ລ້າງມືໃສ່ສະບູ ແລະ ເຈວ, ໃສ່ຜ້າອັດປາກ, ຮັກສາໄລຍະຫ່າງ 1 ແມັດຂຶ້ນໄປ", "ລ້າງມືໃສ່ສະບູ, ຮັກສາໄລຍະຫ່າງ 1 ແມັດຂຶ້ນໄປ", "ລ້າງມືໃສ່ສະບູ, ເຈວລ້າງມື, ຮັກສາໄລຍະຫ່າງ 1 ແມັດຂຶ້ນໄປ"], answer: "ລ້າງມືໃສ່ສະບູ ແລະ ເຈວ, ໃສ່ຜ້າອັດປາກ, ຮັກສາໄລຍະຫ່າງ 1 ແມັດຂຶ້ນໄປ" },
+{ question:"ອັກສອນຫຍໍ້ຂອງອົງການສະຫະປະຊາຊາດແມ່ນຫຍັງ?", choices: ["UN","WHO","UNESCO","UNICEF"], answer:"UN"},
+{ question:"ຂໍ້ໃດຄືຜົນເສຍຫາຍຈາກການຕັດໄມ້ທໍາລາຍປ່າຫຼາຍທີ່ສຸດ?", choices: ["ເຄື່ອງປ່າຂອງດົງຖືກທໍາລາຍ","ສັດປ່າບໍ່ມີທີ່ຢູ່ອາໄສ","ຂາດແຄນຊັບພະຍາກອນປ່າໄມ້","ເຮັດໃຫ້ເກີດໄພທໍາມະຊາດ"], answer:"ເຮັດໃຫ້ເກີດໄພທໍາມະຊາດ"},
+{ question:"ປະທານປະເທດຄົນທໍາອິດຂອງ ສ.ປ.ປ ລາວ ແມ່ນທ່ານໃດ?", choices: ["ທ່ານ ສຸພານຸວົງ","ທ່ານ ໄກສອນ ພົມວິຫານ","ທ່ານ ຄໍາໄຕ ສີພັນດອນ","ທ່ານ ໝູຮັກ ພູມສະຫວັນ"], answer:"ທ່ານ ສຸພານຸວົງ"},
+{ question:"ຂໍ້ໃດ ກົງກັບ ຄໍາວ່າເດືອນອ້າຍ(ຈຽງ) ໃນໜຶ່ງປີຂອງຈັນທະລະຄະຕິມີ 12 -13 ເດືອນ?", choices: ["ເດືອນທີສີ່","ເດືອນທີສາມ","ເດືອນທີສອງ","ເດືອນທີໜຶ່ງ"], answer:"ເດືອນທີໜຶ່ງ"},
+{ question:"ຂໍ້ໃດແມ່ນປູສະນີຍະວັດຖຸ?", choices: ["ພະທາດຫຼວງ","ວັດອົງຕື້","ພະບາງ","ເສົາຫີນຕັ້ງ"], answer:"ພະບາງ"},
+{ question:"ການໃຊ້ນໍ້າຢ່າງປະຢັດແມ່ນແນວໃດ?", choices: ["ປ່ອຍທໍ່ນໍ້າຮົ່ວບໍ່ມີເວລາແປງ","ໃຊ້ສາຍຢາງສີດນໍ້າລ້າງລົດເລີຍ","ໃຊ້ນໍ້າແລ້ວບໍ່ປິດກັອກ","ປິດກ໋ອກນໍ້າເມື່ອເວລາຖູແຂ້ວ"], answer:"ປິດກ໋ອກນໍ້າເມື່ອເວລາຖູແຂ້ວ"},
+{ question:"ສະຖານທີ່ຢູ່ພາກໃດຂອງປະເທດລາວທີ່ມີລະເບີດບໍ່ທັນແຕກຫຼາຍທີ່ສຸດ?", choices: ["ພາກເໜືອ","ພາກກາງ","ພາກໃຕ້","ພາກເໜືອ ແລະ ພາກກາງ"], answer:"ພາກເໜືອ ແລະ ພາກກາງ"},
+{ question:"ການປະຕິບັດໃນຂໍ້ໃດທີ່ສະແດງເຖິງການອະນຸລັກສະພາບແວດລ້ອມ?", choices: ["ຈຸດຂີ້ເຫຍື້ອທຸກໆມື້","ປູກຕົ້ນໄມ້ທົດແທນຕົ້ນໄມ້ທີ່ຖືກຕັດໄປ","ໃຊ້ຢາຂ້າແມງໄມ້ ເພື່ອໃສ່ຜົນລະປູກ","ໃຊ້ລົດຈັກແທນລົດບັນທຸກ ເພື່ອຫຼຸດມົນລະພິດ"], answer:"ປູກຕົ້ນໄມ້ທົດແທນຕົ້ນໄມ້ທີ່ຖືກຕັດໄປ"},
+{ question:"ການເກີດສຸລິຍະຄາດເກີດຂຶ້ນກົງກັບຂໍ້ໃດ?", choices: ["ຕໍາແໜ່ງຂອງດາວເຄາະໃນລະບົບສຸລິຍະ","ຄວາມຜິດປົກກະຕິຂອງແກ໊ສໃນອະວະກາດ","ຕໍາແໜ່ງດວງອາທິດ, ໂລກ ແລະ ດວງຈັນຕັ້ງສາກກັນ","ຄວາມແຮງຂອງລະບົບສຸລິຍະ ແລະ ແຮງດຶງດູດຂອງດວງອາທິດ"], answer:"ຕໍາແໜ່ງຂອງດາວເຄາະໃນລະບົບສຸລິຍະ"},
+{ question:"ຂໍ້ໃດແມ່ນປະເທດສະມາຊິກສະມາຄົມປະຊາຊາດອາຊີຕາເວັນອອກສຽງໃຕ້ທັງໝົດ?", choices: ["ບຣູໄນ, ກໍາປູເຈຍ, ລາວ","ໄທ, ຫວຽດນາມ, ຈີນ","ຟິລິບປິນ, ຢີ່ປຸ່ນ, ມຽນມາ","ມາເລເຊຍ, ສິງກະໂປ, ເກົາຫຼີ"], answer:"ບຣູໄນ, ກໍາປູເຈຍ, ລາວ"},
+{ question:"ອະໄວຍະວະໃດກ່ຽວຂ້ອງກັບການຫາຍໃຈເຂົ້າ-ອອກ?", choices: ["ຕັບອ່ອນ","ກະບັງລົມ","ກະເພາະ","ໄຂ່ຫຼັງ"], answer:"ກະບັງລົມ"},
+{ question:"ຂໍ້ໃດຂອງພືດມີໜ້າທີ່ສ້າງອາຫານ?", choices: ["ໃບ","ດອກ","ໝາກ","ຮາກ"], answer:"ໃບ"},
+{ question:"ກະແສໄຟຟ້າທີ່ໃຊ້ໃນເຮືອນເປັນໄຟຟ້າຊະນິດໃດ?", choices: ["ໄຟຟ້າສະຖິດ","ໄຟຟ້າກະແສສະຫຼັບ","ໄຟຟ້າກະແສກົງ","ໄຟຟ້າຊັກນໍາ"], answer:"ໄຟຟ້າກະແສສະຫຼັບ"},
+{ question:"ດາວເຄາະທີ່ມີຂະໜາດໃຫຍ່ທີ່ສຸດໃນລະບົບສຸລິຍະຈັກກະວານແມ່ນດາວເຄາະໃນຂໍ້ໃດ?", choices: ["ໂລກ","ດາວເສົາ","ດາວອັງຄານ","ດາວພະຫັດ"], answer:"ດາວພະຫັດ"},
+{ question:"ສິ່ງໃດແມ່ນຄວາມສະເໝີພາບ ຍິງ-ຊາຍ?", choices: ["ເດັກຊາຍຕ້ອງມີການສຶກສາສູງ","ເດັກຍິງມີໜ້າທີ່ເຮັດອະນາໄມເຮືອນຝ່າຍດຽວ","ເດັກຊາຍມີສິດສະແດງຄວາມສາມາດຫຼາຍກວ່າເດັກຍິງ","ເດັກຍິງ ແລະ ເດັກຊາຍສາມາດມີບົດບາດ, ໜ້າທີ່ ແລະ ເຮັດໜ້າວຽກຄືກັນໄດ້"], answer:"ເດັກຍິງ ແລະ ເດັກຊາຍສາມາດມີບົດບາດ, ໜ້າທີ່ ແລະ ເຮັດໜ້າວຽກຄືກັນໄດ້"},
+{ question:"ສະຖິຕິຈໍານວນຄັ້ງ, ອຸບັດເຫດຕາມຖະໜົນປະຈໍາປີ 2020 ຂອງນະຄອນຫຼວງມີເທົ່າໃດ?", choices: ["1155 ຄັ້ງ","1156 ຄັ້ງ","1157 ຄັ້ງ","1158 ຄັ້ງ"], answer:"1155 ຄັ້ງ"},
+{ question:"ສ່ວນປະກອບທີ່ສໍາຄັນຂອງລົດຖີບມີຈັກຢ່າງ?", choices: ["7 ຢ່າງ","8 ຢ່າງ","9 ຢ່າງ","10 ຢ່າງ"], answer:"8 ຢ່າງ"},
+{ question:"ສະພາບແວດລ້ອມແບ່ງອອກເປັນຈັກປະເພດ?", choices: ["3 ປະເພດ","4 ປະເພດ","5 ປະເພດ","6 ປະເພດ"], answer:"3 ປະເພດ"},
+{ question:"ການປັບຕົວຂອງສິ່ງທີ່ມີຊີວິດແມ່ນເພື່ອຫຍັງ?", choices: ["ເພື່ອຮັກສາຮູບຮ່າງລັກສະນະ","ເພື່ອໃຫ້ສາມາດຢູ່ລອດໄດ້","ເພື່ອຮັກສາພັນເດີມ","ເພື່ອຮັກສາພໍ່ພັນ ແລະ ແມ່ພັນ"], answer:"ເພື່ອໃຫ້ສາມາດຢູ່ລອດໄດ້"},
+{ question:"ປອດຂອງຄົນເຮົາປະກອບມີຈັກເບື້ອງ?", choices: ["2 ເບື້ອງ","3 ເບື້ອງ","4 ເບື້ອງ","5 ເບື້ອງ"], answer:"2 ເບື້ອງ"},
+{ question:"ລະບົບໝູນວຽນຂອງເລືອດປະກອບມີຫຍັງແດ່?", choices: ["ຫົວໃຈ, ເສັ້ນເລືອດດໍາ, ເສັ້ນເລືອດແດງ, ເສັ້ນເລືອດຝອຍ, ຕັບ","ຫົວໃຈ, ເສັ້ນເລືອດດໍາ, ເສັ້ນເລືອດແດງ, ເສັ້ນເລືອດຝອຍ, ໝາກໄຂ່ຫຼັງ","ຫົວໃຈ, ເສັ້ນເລືອດ, ເສັ້ນເລືອດແດງ, ເສັ້ນເລືອດຝອຍ, ປອດ","ຫົວໃຈ, ເສັ້ນເລືອດດໍາ, ເສັ້ນເລືອດແດງ, ເສັ້ນເລືອດຝອຍ ແລະ ເລືອດ"], answer:"ຫົວໃຈ, ເສັ້ນເລືອດດໍາ, ເສັ້ນເລືອດແດງ, ເສັ້ນເລືອດຝອຍ ແລະ ເລືອດ"},
+{ question:"ລະບົບປະສາດໃນຮ່າງກາຍຄົນເຮົາມີຫຍັງແດ່?", choices: ["ເສັ້ນປະສາດ, ສະໝອງ ແລະ ອອກແອກສັນຫຼັງ","ເສັ້ນປະສາດ, ສະໝອງ ແລະ ກະດູກສັນຫຼັງ","ເສັ້ນປະສາດ, ສະໝອງ ແລະ ເສັ້ນເລືອດຝອຍ","ເສັ້ນປະສາດ, ສະໝອງ ແລະ ເສັ້ນເລືອດດໍາ"], answer:"ເສັ້ນປະສາດ, ສະໝອງ ແລະ ອອກແອກສັນຫຼັງ"},
+{ question:"ການລ້າງມືມີຈັກຂັ້ນຕອນ?", choices: ["6 ຂັ້ນຕອນ","7 ຂັ້ນຕອນ","8 ຂັ້ນຕອນ","9 ຂັ້ນຕອນ"], answer:"7 ຂັ້ນຕອນ"},
+{ question:"ການລ້ຽງກົບມີຈັກໄລຍະ?", choices: ["2 ໄລຍະ","3 ໄລຍະ","4 ໄລຍະ","5 ໄລຍະ"], answer:"2 ໄລຍະ"},
+{ question:"ການລໍາລຽງນໍ້າຂອງພືດມີຈັກພາກສ່ວນ?", choices: ["2 ພາກສ່ວນ","3 ພາກສ່ວນ","5 ພາກສ່ວນ","6 ພາກສ່ວນ"], answer:"3 ພາກສ່ວນ"},
+{ question:"ການສືບພັນຂອງສັດມີຈັກປະເພດ?", choices: ["3 ປະເພດ","4 ປະເພດ","2 ປະເພດ","5 ປະເພດ"], answer:"2 ປະເພດ"},
+{ question:"ຂໍ້ໃດແມ່ນປະຕິກິລິຍາຂອງການເຜົາໄໝ້?", choices: ["ເຊື້ອໄຟ, ອອກຊີເຈນ ແລະ ພະລັງງານ","ເຊື້ອໄຟ ແລະ ອອກຊີເຈນ","ອອກຊີເຈນ ແລະ ພະລັງງານ","ພະລັງງານ ແລະ ເຊື້ອໄຟ"], answer:"ເຊື້ອໄຟ, ອອກຊີເຈນ ແລະ ພະລັງງານ"},
+{ question:"ປະກົດການສຸລິຍະຄາດເກີດຂຶ້ນໃຊ້ເວລາປະມານຈັກນາທີ?", choices: ["6 ນາທີ","7 ນາທີ","8 ນາທີ","9 ນາທີ"], answer:"7 ນາທີ"},
+{ question:"ຄວາມແຮງແມ່ເຫຼັກທີ່ມີຂົ້ວຄືກັນເມື່ອມາໃກ້ກັນຈະເປັນແນວໃດ?", choices: ["ຍູ້ກັນ","ດຶງດູດກັນ","ບໍ່ດຶງດູດກັນ","ບໍ່ຍູ້ກັນ"], answer:"ຍູ້ກັນ"},
+{ question:"ໂລກເຮົາໃນຊັ້ນບັນຍາກາດປະກອບດ້ວຍໄນໂຕຣເຈນເທົ່າໃດ%?", choices: ["77,08%","78,08%","79,08%","80,08%"], answer:"78,08%"},
+{ question:"ນໍ້າໝູນວຽນຜ່ານພາວະໃດແດ່?", choices: ["ແຂງ ແລະ ອາຍ","ແຂງ ແລະ ແຫຼວ","ແຫຼວ ແລະ ອາຍ","ແຂງ, ແຫຼວ ແລະ ອາຍ"], answer:"ແຂງ, ແຫຼວ ແລະ ອາຍ"},
+{ question:"ເພື່ອຫຼີກເວັ້ນອັນຕະລາຍຈາກລະເບີດບໍ່ທັນແຕກທີ່ຕົກຄ້າງຢູ່ມີຈັກຂໍ້ຫ້າມ?", choices: ["6 ຂໍ້ຫ້າມ","7 ຂໍ້ຫ້າມ","8 ຂໍ້ຫ້າມ","9 ຂໍ້ຫ້າມ"], answer:"7 ຂໍ້ຫ້າມ"},
+{ question:"ພືດທີ່ຖືກແສງແດດນໍາໃຊ້ຂະບວນການໃດ?", choices: ["ສັງເຄາະສີ","ສັງເຄາະແສງ","ສັງເຄາະນໍ້າ","ສັງເຄາະອາກາດ"], answer:"ສັງເຄາະແສງ"},
+{ question:"ປະເທດລາວມີເນື້ອທີ່ທັງໝົດເທົ່າໃດ?", choices: ["236,800 ກິໂລຕາແມັດ","237,800 ກິໂລຕາແມັດ","238,800 ກິໂລຕາແມັດ","239,800 ກິໂລຕາແມັດ"], answer:"236,800 ກິໂລຕາແມັດ"},
+{ question:"ທຸງຊາດລາວມີສີໃດແດ່?", choices: ["ສີຂຽວ, ສີແດງ, ສີຟ້າ","ສີຂາວ, ສີແດງ, ສີຟ້າ","ສີເຫຼືອງ, ສີແດງ, ສີຟ້າ","ສີດໍາ, ສີແດງ, ສີຟ້າ"], answer:"ສີຂາວ, ສີແດງ, ສີຟ້າ"},
+{ question:"ວັນທີ ແລະ ເດືອນໃດແມ່ນວັນຄູແຫ່ງຊາດ?", choices: ["1 ມິຖຸນາ","20 ກໍລະກົດ","7 ຕຸລາ","13 ສິງຫາ"], answer:"7 ຕຸລາ"},
+{ question:"ພວກລ່າເມືອງຂຶ້ນຝຣັ່ງເຂົ້າມາຮຸກຮານລາວທ້າຍສະຕະວັດທີເທົ່າໃດ?", choices: ["ທ້າຍສະຕະວັດທີ 17","ທ້າຍສະຕະວັດທີ 19","ທ້າຍສະຕະວັດທີ 18","ທ້າຍສະຕະວັດທີ 20"], answer:"ທ້າຍສະຕະວັດທີ 19"},
+{ question:"ສາມຊາດອິນດູຈີນມີປະເທດໃດແດ່?", choices: ["ລາວ, ຫວຽດນາມ ແລະ ກໍາປູເຈຍ","ລາວ, ຫວຽດນາມ ແລະ ໄທ","ລາວ, ຫວຽດນາມ ແລະ ຈີນ","ລາວ, ຫວຽດນາມ ແລະ ພະມ້າ"], answer:"ລາວ, ຫວຽດນາມ ແລະ ກໍາປູເຈຍ"},
+{ question:"ວັນສະຖາປານາ ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ ແມ່ນວັນທີ ເດືອນ ປີໃດ?", choices: ["2 ທັນວາ 1975","20 ມັງກອນ 1949","13 ທັນວາ 1920","19 ພຶດສະພາ 1890"], answer:"2 ທັນວາ 1975"},
+{ question:"ນະຄອນຫຼວງວຽງຈັນມີຈັກຕົວເມືອງ?", choices: ["6 ເມືອງ","7 ເມືອງ","8 ເມືອງ","9 ເມືອງ"], answer:"9 ເມືອງ"},
+{ question:"ລາວມີຊາຍແດນຕິດກັບຈັກປະເທດ?", choices: ["4 ປະເທດ","5 ປະເທດ","6 ປະເທດ","7 ປະເທດ"], answer:"5 ປະເທດ"},
+{ question:"ປະເທດຕີມໍເລດເຕ ຕັ້ງຢູ່ເຂດໃດ?", choices: ["ເສັ້ນແວງ","ເສັ້ນສູນສູດ","ເສັ້ນເຄົ້າ","ຂັວນໂລກ"], answer:"ເສັ້ນສູນສູດ"},
+{ question:"ປະເທດລາວເຮົາລວມທັງໝົດມີຈັກແຂວງ?", choices: ["17 ແຂວງ 1 ນະຄອນຫຼວງ","18 ແຂວງ 1 ນະຄອນຫຼວງ","19 ແຂວງ 1 ນະຄອນຫຼວງ","20 ແຂວງ 1 ນະຄອນຫຼວງ"], answer:"17 ແຂວງ 1 ນະຄອນຫຼວງ"},
+{ question:"ວັນສ້າງຕັ້ງເຍົາວະຊົນລາວແມ່ນວັນທີ, ເດືອນ, ປີໃດ?", choices: ["ວັນທີ 2 ເດືອນ ທັນວາ 1955","ວັນທີ 2 ເດືອນ ທັນວາ 1956","ວັນທີ 2 ເດືອນ ທັນວາ 1959","ວັນທີ 2 ເດືອນ ທັນວາ 1975"], answer:"ວັນທີ 2 ເດືອນ ທັນວາ 1955"},
+{ question:"ເພງຊາດລາວແມ່ນໃຜເປັນຜູ້ແຕ່ງ?", choices: ["ທ່ານ ພູມີ ວົງວິຈິດ","ທ່ານ ສະໝານ ວິຍະເກດ","ທ່ານ ສີຊະນະ ສີສານ","ທ່ານ ໝູຮັກ ພູມສະຫວັນ"], answer:"ທ່ານ ສີຊະນະ ສີສານ"},
+{ question:"ຄົນເຮົາຂາດທາດອີອົດຈະເປັນພະຍາດຫຍັງ?", choices: ["ເປັນເປ້ຍ","ເປັນລ່ອຍ","ຄໍເອີມ","ທ້ອງປຸ້ງ"], answer:"ຄໍເອີມ"},
+{ question:"ທາດມູນໃດທີ່ມີຢູ່ໃນເປືອກໂລກຫຼາຍທີ່ສຸດ?", choices: ["ແສງແດດ","ຄວາມມືດ","ອາຍກາກໂບນິກ","ອົກຊີແຊນ"], answer:"ອົກຊີແຊນ"},
+{ question:"ເຊື້ອໂລກເຕຕານົດ ຫຼື ບາດທະຍັກເຂົ້າສູ່ຮ່າງກາຍຄົນເຮົາໄດ້ແນວໃດ?", choices: ["ທາງດັງ","ທາງບາດແຜ","ທາງປາກ","ທາງຮູທະວານ"], answer:"ທາງບາດແຜ"},
+{ question:"ໃນຕອນກາງເວັນຕົ້ນໄມ້ປ່ອຍທາດຫຍັງອອກມາ?", choices: ["ກາກໂບນິກ","ນີໂຕຣແຊນ","ອົກຊີແຊນ","ຮີໂດຣແຊນ"], answer:"ອົກຊີແຊນ"},
+{ question:"ເປັນຫຍັງຈຶ່ງມີກາງເວັນ ແລະ ກາງຄືນ?", choices: ["ຍ້ອນໜ່ວຍໂລກປິ່ນອ້ອມຕົວມັນເອງ","ຍ້ອນການໂຄຈອນຂອງໂລກ","ຍ້ອນແກນຂອງໜ່ວຍໂລກຫງ່ຽງ","ຍ້ອນຕໍາແໜ່ງຂອງດວງອາທິດຢູ່ບ່ອນຕ່າງກັນ"], answer:"ຍ້ອນໜ່ວຍໂລກປິ່ນອ້ອມຕົວມັນເອງ"},
+{ question:"ສາເຫດໃດ ສໍາຄັນທີ່ສຸດເຮັດໃຫ້ປະຊາກອນແຈກຢາຍບໍ່ສະໝໍ່າສະເໝີ?", choices: ["ພູມອາກາດ","ພູມສັນຖານ","ການຊອກວຽກເຮັດງານທໍາ","ການສຶກສາ"], answer:"ພູມສັນຖານ"},
+{ question:"ການເອົາລະອອງເກສອນຜູ້ທີ່ແກ່ຂອງພືດທີ່ມີດອກໄປໃສ່ຍອດເກສອນແມ່ທີ່ກໍາລັງແກ່ ຫຼື ສຸກເຕັມທີ່, ເພິ່ນເອີ້ນຂະບວນການນີ້ວ່າແນວໃດ?", choices: ["ການປະສົມພັນລະອອງເກສອນ","ການປະສົມພັນພືດແບບທໍາມະຊາດ","ການປະສົມພັນພືດແບບບໍ່ມີດອກ","ການປະສົມພັນພືດແບບທົ່ວໄປ"], answer:"ການປະສົມພັນລະອອງເກສອນ"},
+{ question:"ພືດເຕີບໃຫຍ່ໃນຍາມໃດ?", choices: ["ຕອນເຊົ້າ","ຕອນແລງ","ກາງຄືນ","ກາງເວັນ"], answer:"ກາງຄືນ"},
+{ question:"ປະເທດລາວໃນລະດູຝົນໄດ້ຮັບອິດທິພົນຈາກມວນອາກາດໃດ?", choices: ["ມວນອາກາດທະວີບ","ມວນອາກາດສູນສູດ","ມວນອາກາດຊີເບຣີ","ມວນອາກາດມະຫາສະໝຸດ"], answer:"ມວນອາກາດມະຫາສະໝຸດ"},
+{ question:"ໄຂມັນຈາກສັດພາໃຫ້ເກີດພະຍາດຫຍັງ?", choices: ["ຕຸ້ຍ","ເສັ້ນເລືອດຕັນ","ເລືອດຈາງ","ກະດູກອ່ອນ"], answer:"ຕຸ້ຍ"},
+{ question:"ປ່າໄມ້ ນອກຈາກມີຄວາມສໍາຄັນດ້ານເສດຖະກິດແລ້ວ ຍັງມີຄວາມສໍາຄັນຕໍ່ການດໍາລົງຊີວິດ ຂອງປະຊາຊົນລາວດ້ານໃດຫຼາຍທີ່ສຸດ?", choices: ["ເປັນແຫຼ່ງອາຫານ","ເປັນແຫຼ່ງທ່ອງທ່ຽວ","ເປັນແຫຼ່ງຜະລິດອົກຊີແຊນ","ເປັນແຫຼ່ງສະໜອງຢາພື້ນເມືອງ"], answer:"ເປັນແຫຼ່ງທ່ອງທ່ຽວ"},
+{ question:"ແມ່ນໍ້າໃດແດ່ ທີ່ເກີດຈາກພູພຽງຊຽງຂວາງ?", choices: ["ນໍ້າງື່ມ, ນໍ້າງຽບ, ນໍ້າຊັນ, ນໍ້າເນີນ, ນໍ້າມັດ ແລະ ນໍ້າເທີນ","ນໍ້າງື່ມ, ນໍ້າງຽບ, ນໍ້າຊັນ, ນໍ້າເນີນ, ນໍ້າມັດ ແລະ ນໍ້າໂມ້","ນໍ້າງື່ມ, ນໍ້າງຽບ, ນໍ້າຊັນ, ນໍ້າເນີນ, ນໍ້າມັດ ແລະ ນໍ້າກະດິງ","ນໍ້າງື່ມ, ນໍ້າງຽບ, ນໍ້າຊັນ, ນໍ້າເນີນ, ນໍ້າມັດ ແລະ ນໍ້າອູ"], answer:"ນໍ້າງື່ມ, ນໍ້າງຽບ, ນໍ້າຊັນ, ນໍ້າເນີນ, ນໍ້າມັດ ແລະ ນໍ້າໂມ້"},
+{ question:"ຢູ່ໃນໂລກມີຈັກທະວີບ ແລະ ມີມະຫາສະໝຸດຈັກແຫ່ງ?", choices: ["3 ທະວີບ ແລະ ມະຫາສະໝຸດ 4 ແຫ່ງ","4 ທະວີບ ແລະ ມະຫາສະໝຸດ 4 ແຫ່ງ","5 ທະວີບ ແລະ ມະຫາສະໝຸດ 4 ແຫ່ງ","6 ທະວີບ ແລະ ມະຫາສະໝຸດ 4 ແຫ່ງ"], answer:"6 ທະວີບ ແລະ ມະຫາສະໝຸດ 4 ແຫ່ງ"},
+{ question:"ເສັ້ນທາງໃດແມ່ນທາງລະດັບຊາດ?", choices: ["ເສັ້ນທາງເລກທີ 10","ເສັ້ນທາງເລກທີ 11","ເສັ້ນທາງເລກທີ 12","ເສັ້ນທາງເລກທີ 13"], answer:"ເສັ້ນທາງເລກທີ 13"},
+{ question:"ສະໄໝອານາຈັກລາວລ້ານຊ້າງຈະເລີນຮຸ່ງເຮືອງແມ່ນກະສັດອົງໃດປົກຄອງ?", choices: ["ເຈົ້າຟ້າງຸ່ມ","ເຈົ້າໄຊຍະເສດຖາທິລາດ","ເຈົ້າອານຸວົງ","ເຈົ້າສຸລິຍະວົງສາ"], answer:"ເຈົ້າສຸລິຍະວົງສາ"},
+{ question:"ລູກດິ່ງໃຊ້ໄວ້ເຮັດຫຍັງ?", choices: ["ວັດແທກລວງນອນ","ວັດແທກລວງຕັ້ງ","ວັດແທກມຸມ","ວັດແທກຈອມ"], answer:"ວັດແທກລວງຕັ້ງ"},
+{ question:"ປະທານປະເທດລາວເຮົາຄົນປັດຈຸບັນຊື່ ແລະ ນາມສະກຸນວ່າແນວໃດ?", choices: ["ທ່ານ ຈຸມມະລີ ໄຊຍະສອນ","ທ່ານ ຄໍາພັນ ວິພາວັນ","ທ່ານ ນາງ ປານີ ຢາທໍ່ຕູ້","ທ່ານ ທອງລຸນ ສີສຸລິດ"], answer:"ທ່ານ ທອງລຸນ ສີສຸລິດ"},
+{ question:"ຊັບພະຍາກອນໃຕ້ດິນຂອງລາວມີປະເພດໃດແດ່?", choices: ["ພະລັງງານ, ໂລຫະ, ວັດຖຸກໍ່ສ້າງ ແລະ ອະໂລຫະ","ພະລັງງານ, ຖ່ານຫີນ, ນໍ້າມັນເຊື້ອໄຟ ແລະ ອະໂລຫະ","ພະລັງງານ, ໂລຫະ, ກາສທໍາມະຊາດ ແລະ ອະໂລຫະ","ພະລັງງານ, ວັດຖຸກໍ່ສ້າງ, ແຮ່ທາດ ແລະ ອະໂລຫະ"], answer:"ພະລັງງານ, ໂລຫະ, ວັດຖຸກໍ່ສ້າງ ແລະ ອະໂລຫະ"},
+{ question:"ສີ່ທັນສະໄໝໃຊ້ເຂົ້າໃນການກະສິກໍາມີຫຍັງແດ່?", choices: ["ຊົນລະປະທານ, ໄຟຟ້າ, ດິນ ແລະ ເຄມີ","ຊົນລະປະທານ, ໄຟຟ້າ, ເຄມີ ແລະ ກົນຈັກ","ຊົນລະປະທານ, ໄຟຟ້າ ແລະ ກົນຈັກ","ຊົນລະປະທານ, ໄຟຟ້າ-ນໍ້າປະປາ, ຊີວະພາບ ແລະ ກົນຈັກ"], answer:"ຊົນລະປະທານ, ໄຟຟ້າ, ເຄມີ ແລະ ກົນຈັກ"},
+{ question:"ຫັດຖະກໍາທີ່ເປັນມູນເຊື້ອຂອງປະຊາຊົນລາວມີຂະແໜງໃດແດ່?", choices: ["ຕໍ່າແຜ່ນ, ຈັກສານ, ຕີເຫຼັກ ແລະ ປັ້ນດິນເຜົາ","ຕໍ່າແຜ່ນ, ຈັກສານ, ຕີເຫຼັກ ແລະ ແກະສະຫຼັກ","ຕໍ່າແຜ່ນ, ຈັກສານ, ຕີເຫຼັກ, ສິລະປະ, ປັ້ນດິນເຜົາ ແລະ ຕົ້ມກັ່ນ","ຕໍ່າແຜ່ນ, ຈັກສານ, ຕີເຫຼັກ, ແກະສະຫຼັກ, ປັ້ນດິນເຜົາ ແລະ ປຸງແຕ່ງ"], answer:"ຕໍ່າແຜ່ນ, ຈັກສານ, ຕີເຫຼັກ, ສິລະປະ, ປັ້ນດິນເຜົາ ແລະ ຕົ້ມກັ່ນ"},
+{ question:"ຣິກເຕີ Richter ແມ່ນຫົວໜ່ວຍວັດແທກຫຍັງ?", choices: ["ວັດແທກຄວາມຮ້ອນ","ວັດແທກອາກາດ","ວັດແທກແຮງດັນຂອງໂລກ","ວັດແທກແຜ່ນດິນໄຫວ"], answer:"ວັດແທກແຜ່ນດິນໄຫວ"},
+{ question:"ໜ່ວຍໂລກປິ່ນອ້ອມຕົວມັນເອງໃຊ້ເວລາ ຈັກວັນ ແລະ ຈັກຊົ່ວໂມງ?", choices: ["365 ວັນ ກັບ 5 ຊົ່ວໂມງ","365 ວັນ ກັບ 6 ຊົ່ວໂມງ","365 ວັນ ກັບ 7 ຊົ່ວໂມງ","365 ວັນ ກັບ 8 ຊົ່ວໂມງ"], answer:"365 ວັນ ກັບ 6 ຊົ່ວໂມງ"},
+{ question:"ການໃຊ້ແວ່ນແຍງໂຕເອງແມ່ນການໃຊ້ຫຼັກການໃດ?", choices: ["ການກັບແສງ","ການສະທ້ອນຄືນ","ການສະທ້ອນແສງ","ການເຄື່ອນທີ່ຊື່ຂອງແສງ"], answer:"ການສະທ້ອນແສງ"},
+{ question:"ແມ່ນໍ້າຂອງມີຕົ້ນກໍາເນີດມາຈາກໃສ?", choices: ["ພູເບ້ຍ","ພູຫິມາໄລ","ພູຕີເບດ","ພູຫຼວງ"], answer:"ພູຕີເບດ"},
+{ question:"ສາຍພູຫຼວງເປັນຊາຍແດນຂັ້ນລະຫວ່າງລາວ ກັບ ປະເທດໃດ?", choices: ["ປະເທດລາວ ກັບ ປະເທດຈີນ","ປະເທດລາວ ກັບ ປະເທດມຽນມາ","ປະເທດລາວ ກັບ ປະເທດຫວຽດນາມ","ປະເທດລາວ ກັບ ປະເທດກໍາປູເຈຍ"], answer:"ປະເທດລາວ ກັບ ປະເທດຫວຽດນາມ"},
+{ question:"ວັນສ້າງຕັ້ງພັກປະຊາຊົນປະຕິວັດລາວແມ່ນວັນທີ ເດືອນ ປີໃດ?", choices: ["12 ຕຸລາ 1945","22 ມີນາ 1955","20 ມັງກອນ 1949","2 ທັນວາ 1975"], answer:"22 ມີນາ 1955"},
+{ question:"ຄົນເຮົາມີແຂ້ວນໍ້ານົມທັງໝົດຈັກເຫຼັ້ມ?", choices: ["10 ເຫຼັ້ມ","20 ເຫຼັ້ມ","30 ເຫຼັ້ມ","40 ເຫຼັ້ມ"], answer:"20 ເຫຼັ້ມ"},
+{ question:"ທາດຄໍາ ເປື່ອຍຢູ່ອຸນຫະພູມຈັກອົງສາ?", choices: ["1064  ໍC","1065  ໍC","1066  ໍC","1067  ໍC"], answer:"1064  ໍC"},
+{ question:"ທະວີບໃດທີ່ໃຫຍ່ສຸດໃນໂລກ?", choices: ["ທະວີບເອີລົບ","ທະວີບອາຟຣິກາ","ທະວີບເອີຣົບ","ທະວີບອາຊີ"], answer:"ທະວີບອາຊີ"},
+{ question:"ເວລາອ່ານຫຼືຂຽນໜັງສືໃນບ່ອນທີ່ມີແສງສະຫວ່າງພຽງພໍຄວນໃຫ້ປຶ້ມຫ່າງຈາກຕາປະມານຈັກຊັງຕີແມັດ?", choices: ["20 ຊັງຕີແມັດ","30 ຊັງຕີແມັດ","40 ຊັງຕີແມັດ","50 ຊັງຕີແມັດ"], answer:"30 ຊັງຕີແມັດ"},
+{ question:"ນັກຮຽນລຸ່ນອ້າຍຄວນເປັນແບບຢ່າງແນວໃດ?", choices: ["ໄປໂຮງຮຽນໃຫ້ທັນເວລາ","ບໍ່ຕັ້ງໃຈຮໍ່າຮຽນ","ລົມກັນໃນເວລາຮຽນ","ບໍ່ມັກແກ້ວຽກບ້ານ"], answer:"ໄປໂຮງຮຽນໃຫ້ທັນເວລາ"},
+{ question:"ບົດເລື່ອງ(ສ່ອງສຽວ) ທ້າວສົມຈິດ ແລະ ທ້າວວິລະກອນເປັນຄົນແນວໃດ?", choices: ["ມັກຂາດຮຽນ","ບໍ່ຕັ້ງໃຈຮໍ່າຮຽນ","ດຸໝັ່ນ ຕັ້ງໃຈຮໍ່າຮຽນ","ມັກລົມກັນ"], answer:"ດຸໝັ່ນ ຕັ້ງໃຈຮໍ່າຮຽນ"},
+{ question:"ຂໍ້ໃດທີ່ສະແດງເຖິງຄວາມຮັບຜິດຊອບ?", choices: ["ເຮັດວຽກດ້ວຍຄວາມກຽດຄ້ານ","ເຮັດຜິດແລ້ວຕ້ອງກ້າຮັບຜິດ ແລະ ປ່ຽນແປງ","ເຮັດຜິດແຕ່ໂຍນໃຫ້ຄົນອື່ນຮັບຜິດຊອບ","ເຮັດວຽກຜິດແຕ່ບໍ່ຮັບຜິດຊອບ"], answer:"ເຮັດຜິດແລ້ວຕ້ອງກ້າຮັບຜິດ ແລະ ປ່ຽນແປງ"},
+{ question:"ການໃຫ້ກຽດແມ່ຍິງພວກເຮົາຄວນເຮັດແນວໃດ?", choices: ["ເຄົາລົບນັບຖື","ໃຊ້ຄວາມຮຸນແຮງ","ໃຊ້ຄໍາເວົ້າບໍ່ສຸພາບ","ບໍ່ເຄົາລົບນັບຖື"], answer:"ເຄົາລົບນັບຖື"},
+{ question:"ຂໍ້ໃດທີ່ສະແດງເຖິງຄວາມເປັນເພື່ອນບໍ່ດີ?", choices: ["ແບ່ງປັນສິ່ງຂອງ","ບໍ່ຊ່ວຍ ເວລາຍົກເຄື່ອງໜັກ","ຕັກເຕືອນ ເວລາເຮັດຜິດ","ໄປຢ້ຽມຢາມເວລາບໍ່ສະບາຍ"], answer:"ບໍ່ຊ່ວຍ ເວລາຍົກເຄື່ອງໜັກ"},
+{ question:"ການປົກປັກຮັກສາທໍາມະຊາດແມ່ນໜ້າຂອງໃຜ?", choices: ["ກະຊວງກະສິກໍາ","ໜ້າທີ່ຂອງໝົດທຸກຄົນ","ນັກຮຽນຄົນດຽວ","ພໍ່, ແມ່ທຸກຄົນ"], answer:"ໜ້າທີ່ຂອງໝົດທຸກຄົນ"},
+{ question:"ກອງທັບລາວອິດສະຫຼະສ້າງຕັ້ງຂຶ້ນວັນທີ, ເດືອນ, ປີໃດ?", choices: ["20 ມັງກອນ 1946","20 ມັງກອນ 1947","20 ມັງກອນ 1948","20 ມັງກອນ 1949"], answer:"20 ມັງກອນ 1949"},
+{ question:"ນໍ້າຄົງຕົວໃນຈັກພາວະ?", choices: ["3 ພາວະ","4 ພາວະ","5 ພາວະ","6 ພາວະ"], answer:"3 ພາວະ"},
+{ question:"ນໍ້າໝາກນາວທີ່ມີລົດຊາດສົ້ມ(ອາຊິດ) ກັບຕົວຊີ້ວັດຈະກາຍເປັນສີຫຍັງ?", choices: ["ສີແດງ","ສີຂາວ","ສີບົວ","ສີຟ້າ"], answer:"ສີແດງ"},
+{ question:"ອຸປະລາຄາມີຈັກປະກົດການທີ່ເກີດຂຶ້ນກັບດວງອາທິດ ແລະ ດວງຈັນ?", choices: ["ສອງປະກົດການ","ສາມປະກົດການ","ສີ່ປະກົດການ","ຫ້າປະກົດການ"], answer:"ສອງປະກົດການ"},
+{ question:"ຄວາມແຮງແມ່ນຫຍັງ?", choices: ["ການລົ້ມ","ການແລ່ນ","ການຢືນ","ການຍູ້ ຫຼື ການດຶງ"], answer:"ການຍູ້ ຫຼື ການດຶງ"},
+{ question:"ແມ່ເຫຼັກມີຄວາມແຮງຈັກຂົ້ວ?", choices: ["ສອງຂົ້ວ","ສາມຂົ້ວ","ສີ່ຂົ້ວ","ຫ້າຂົ້ວ"], answer:"ສອງຂົ້ວ"},
+{ question:"ການຊ່ວຍເຫຼືອກັນໃນສັງຄົມສະແດງໃຫ້ເຫັນດ້ານໃດ?", choices: ["ອິດສາ","ບໍ່ໃຫ້ກຽດ","ເອົາປຽບຜູ້ອື່ນ","ຊ່ວຍເຫຼືອ"], answer:"ຊ່ວຍເຫຼືອ"},
+{ question:"ເມື່ອພົບເຫັນຜູ້ທີ່ລໍາບາກພວກເຮົາຄວນຊ່ວຍເຫຼືອແນວໃດ?", choices: ["ຊ່ວຍເຫຼືອ ດ້ວຍຄວາມຈິງໃຈ","ບໍ່ພໍໃຈ","ບໍ່ໃຫ້ກຽດ","ຊ່ວຍເຫຼືອ"], answer:"ຊ່ວຍເຫຼືອ ດ້ວຍຄວາມຈິງໃຈ"},
+{ question:"ຄວນເລືອກວິທີແກ້ໄຂແບບໃດດີທີ່ສຸດເມື່ອຕົນເອງບໍ່ໄດ້ແກ້ບົດເຝິກຫັດ?", choices: ["ເວົ້າຄວາມຈິງກັບຄູວ່ານ້ອງໄປຫຼິ້ນລືມແກ້ບົດເຝິກຫັດ","ຮັບຜິດຊອບພ້ອມທັງສັນຍາກັບຄູວ່າຈະແກ້ບົດເຝິກຫັດຄືນ","ຢືມປື້ມຂອງໝູ່ໃຫ້ຄູເບິ່ງ","ຕົວະຄູວ່ານ້ອງເຮັດແລ້ວແຕ່ລືມຢູ່ເຮືອນ"], answer:"ຮັບຜິດຊອບພ້ອມທັງສັນຍາກັບຄູວ່າຈະແກ້ບົດເຝິກຫັດຄືນ"},
+{ question:"ແມ່ນໍ້າຂອງໄຫຼຜ່ານຈັກປະເທດ?", choices: ["5 ປະເທດ","6 ປະເທດ","7 ປະເທດ","8 ປະເທດ"], answer:"5 ປະເທດ"},
+{ question:"ການປູກຝັງຢູ່ລາວມີຈັກຂະແໜງການຕົ້ນຕໍ?", choices: ["3 ຂະແໜງການຕົ້ນຕໍ","4 ຂະແໜງການຕົ້ນຕໍ","5 ຂະແໜງການຕົ້ນຕໍ","6 ຂະແໜງການຕົ້ນຕໍ"], answer:"3 ຂະແໜງການຕົ້ນຕໍ"},
+{ question:"ຂະບວນການລຸກຮື້ຂຶ້ນຍຶດອໍານາດຢູ່ລາວໃນເດືອນ, ປີໃດ? ໄດ້ຮັບໄຊຊະນະ?", choices: ["ເດືອນ 7 ປີ 1944","ເດືອນ 8 ປີ 1945","ເດືອນ 9 ປີ 1946","ເດືອນ 10 ປີ 1947"], answer:"ເດືອນ 8 ປີ 1945"},
+{ question:"ເນື້ອທີ່ຂອງໜ່ວຍໂລກມີປະມານເທົ່າໃດ?", choices: ["570 000 000 km2","580 000 000 km2","590 000 000 km2","510 000 000 km2"], answer:"510 000 000 km2"},
+{ question:"ໜ່ວຍໂລກປິ່ນອ້ອມຕົວມັນເອງໜຶ່ງຮອບໃຊ້ເວລາເທົ່າໃດ?", choices: ["23 ຊົ່ວໂມງ","24 ຊົ່ວໂມງ","25 ຊົ່ວໂມງ","26 ຊົ່ວໂມງ"], answer:"24 ຊົ່ວໂມງ"},
+{ question:"ຂໍ້ໃດແມ່ນການປົກປ້ອງສິດທິເດັກຈາກການລະເມີດ?", choices: ["ການປ້ອຍດ່າ ແລະ ທຳຮ້າຍຮ່າງກາຍ","ການບອກສອນຂອງພໍ່ແມ່ເຮັດວຽກໃນເຮືອນ","ການໃຫ້ຄໍາປຶກສາຂອງເພື່ອນໃນດ້ານການຮຽນ","ການອົບຮົມສັ່ງສອນຂອງຄູໃຫ້ເປັນຄົນດີ"], answer:"ການປ້ອຍດ່າ ແລະ ທຳຮ້າຍຮ່າງກາຍ"},
+{ question:"ຖ້າຖືກລະເມີດສິດໃນການປົກປ້ອງເດັກຈະເປັນແນວໃດ?", choices: ["ເດັກຈະໄດ້ພົວພັນພົບປະສ້າງສັນກັບເພື່ອນ","ເດັກມີຄວາມຊຶມເສົ້າ, ຢ້ານກົວບໍ່ກ້າສະແດງອອກ","ເດັກມີຄວາມມ່ວນຊື່ນດ້ວຍຄວາມພໍໃຈ","ເດັກມີຄວາມສາມັກຄີຮັກແພງເຊິ່ງກັນ ແລະ ກັນ"], answer:"ເດັກມີຄວາມຊຶມເສົ້າ, ຢ້ານກົວບໍ່ກ້າສະແດງອອກ"},
+{ question:"ຖ້າເດັກໄດ້ຮັບການປົກປ້ອງຈະເປັນແນວໃດ?", choices: ["ແນວຄິດຈິດໃຈຂອງເດັກມີຄວາມກັງວົນ","ເດັກນ້ອຍຈະບໍ່ຖືກຈຳແນກ ແລະ ບໍ່ຖືກປ່ອຍປະລະເລີຍ","ການເຂົ້າຮ່ວມຂອງເດັກໃນກິດຈະກຳຕ່າງໆໜ້ອຍລົງ","ເດັກຕ້ອງເພີ່ມຄວາມລະມັດລະວັງຫຼາຍຂຶ້ນ"], answer:"ເດັກນ້ອຍຈະບໍ່ຖືກຈຳແນກ ແລະ ບໍ່ຖືກປ່ອຍປະລະເລີຍ"},
+{ question:"ພຶດຕິກຳໃດທີ່ເປັນການໃຊ້ວຽກເດັກໄປໃນທາງທີ່ບໍ່ເໝາະສົມ?", choices: ["ການໃຊ້ເດັກສະແດງຄວາມສາມາດຂອງຕົນເອງ","ການໃຊ້ເດັກເຂົ້າແຂ່ງຂັນຕອບຄໍາຖາມວິທະຍາສາດ","ການໃຊ້ເດັກໂຄສະນາຜະລິດຕະພັນທ້ອງຖິ່ນ","ການໃຊ້ເດັກໄປຊື້ຢາສູບ,ເຫຼົ້າ ຫຼື ເບຍ ຕາມຮ້ານ"], answer:"ການໃຊ້ເດັກໄປຊື້ຢາສູບ,ເຫຼົ້າ ຫຼື ເບຍ ຕາມຮ້ານ"},
+{ question:"ຖ້າຜູ້ໃດລະເມີດສິດທິໃນການປົກປ້ອງຂອງເດັກ ການຈັດຕັ້ງຄວນເຮັດແນວໃດ?", choices: ["ສົມຮູ້ຮ່ວມຄິດ ແລະ ປະຕິບັດຕາມ","ເອີ້ນຜູ້ກ່ຽວມາສອບຖາມ ແລະ ຍ້ອງຍໍ","ເອີ້ນຜູ້ກ່ຽວມາສຶກສາອົບຮົມ ຫຼືປະຕິບັດວິໄນ","ປິດບັງການກະທຳຂອງຜູ້ລະເມີດສິດ"], answer:"ເອີ້ນຜູ້ກ່ຽວມາສຶກສາອົບຮົມ ຫຼືປະຕິບັດວິໄນ"},
+{ question:"ລັດຖະບານມີພັນທະໃນການປົກປ້ອງເດັກນ້ອຍແນວໃດ?", choices: ["ລັດຖະບານບໍ່ຊ່ວຍເຫຼືອເດັກນ້ອຍທີ່ບໍ່ມີສິ່ງແວດລ້ອມດ້ານຄອບຄົວ","ລັດຖະບານບໍ່ເຫັນຄວາມສຳຄັນແກ່ເດັກນ້ອຍ","ລັດຖະບານບໍ່ປົກປ້ອງເດັກນ້ອຍ","ລັດປົກປ້ອງເປັນພິເສດໃຫ້ແກ່ເດັກນ້ອຍທີ່ບໍ່ມີສິ່ງແວດລ້ອມດ້ານຄອບຄົວ"], answer:"ລັດປົກປ້ອງເປັນພິເສດໃຫ້ແກ່ເດັກນ້ອຍທີ່ບໍ່ມີສິ່ງແວດລ້ອມດ້ານຄອບຄົວ"},
+{ question:"ຖ້າມີບຸກຄົນລະເມີດສິດທິໃນການປົກປ້ອງເດັກການຈັດຕັ້ງຄວນເຮັດແນວໃດ?", choices: ["ສຶກສາອົບຮົມ ຫຼື ປະຕິບັດວິໄນຕໍ່ຜູ້ກະທໍາຜິດ","ຕິດຕາມ ຫຼື ປົກປ້ອງຜູ້ກະທຳຜິດ","ຊ່ວຍເຫຼືອ ຫຼື ເປີດຊ່ອງທາງໃຫ້ຜູ້ກະທຳຜິດ","ເມີນເສີຍບໍ່ລາຍງານຕໍ່ການຈັດຕັ້ງ"], answer:"ສຶກສາອົບຮົມ ຫຼື ປະຕິບັດວິໄນຕໍ່ຜູ້ກະທໍາຜິດ"},
+{ question:"ເພື່ອບໍ່ໃຫ້ມີການລະເມີດສິດທິເດັກ ລັດຖະບານຕ້ອງປົກປ້ອງເດັກແນວໃດ?", choices: ["ສ້າງຊ່ອງທາງດ້ານສັງຄົມທີ່ສອດຄ່ອງເພື່ອປ້ອງກັນຈາກການທາລຸນ","ຫາແນວທາງທີ່ບໍ່ເໝາະສົມໃຫ້ແກ່ສັງຄົມ","ບໍ່ປ້ອງກັນຕໍ່ເດັກທຸກຮູບແບບ","ເຫັນການລະເມີດສິດທິເດັກເປັນເລື່ອງປົກກະຕິ"], answer:"ສ້າງຊ່ອງທາງດ້ານສັງຄົມທີ່ສອດຄ່ອງເພື່ອປ້ອງກັນຈາກການທາລຸນ"},
+{ question:"ເປັນຫຍັງພໍ່ແມ່ຈຶ່ງສຶກສາອົບຮົມລູກ?", choices: ["ເພື່ອໃຫ້ລູກເປັນຄົນດີ, ມີມາລະຍາດດີ","ເພື່ອໃຫ້ລູກມີຄວາມທໍ້ຖອຍໃຈ","ເພື່ອໃຫ້ລູກມີຄວາມຫງ່ວມເຫງົາ","ເພື່ອໃຫ້ລູກລໍາບາກ"], answer:"ເພື່ອໃຫ້ລູກເປັນຄົນດີ, ມີມາລະຍາດດີ"},
+{ question:"ຖ້າເດັກຖືກລະເມີດສິດໃນການປົກປ້ອງຈິດໃຈຈະເປັນແນວໃດ?", choices: ["ມີຄວາມເບີກບານມ່ວນຊື່ນ","ມີຄວາມກ້າຫານໃນການສະແດງອອກ","ມີຄວາມກັງວົນ, ຫງ່ວມເຫງົາ, ຢ້ານກົວ","ມີຄວາມສະຫງົບ ແລະ ອົບອຸ່ນ"], answer:"ມີຄວາມກັງວົນ, ຫງ່ວມເຫງົາ, ຢ້ານກົວ"},
+{ question:"ຂໍ້ໃດທີ່ສະແດງເຖິງຄວາມຮູ້ບຸນຄຸນຕໍ່ ປູ່, ຍ່າ, ຕາ, ນາຍ?", choices: ["ເວົ້າສຽງແຂງກະດ້າງ","ຄວາມແຈ່ມໃສ","ເບິ່ງເພິ່ນເວລາເຈັບເປັນ","ເວົ້າສຽງດັງ"], answer:"ເບິ່ງເພິ່ນເວລາເຈັບເປັນ"},
+{ question:"ຂໍ້ໃດລຸ່ມນີ້ສະແດງເຖິງການເປັນເພື່ອນທີ່ດີ?", choices: ["ກ່າຍບົດຮຽນ ແລະ ແກ້ບົດເຝິກຫັດໃຫ້ໝູ່","ຮັກແພງສາມັກຄີຊ່ວຍເຫຼືອກັນດ້ວຍຄວາມຈິງໃຈ","ອິດສາບັງບຽດ, ສັດຊື່ຕໍ່ໝູ່ເພື່ອນ","ເຫັນໝູ່ອອກແຮງງານໂຕເອງເບິ່ງເສີຍ"], answer:"ອິດສາບັງບຽດ, ສັດຊື່ຕໍ່ໝູ່ເພື່ອນ"},
+{ question:"ອະໄວຍະວະໃດທີ່ຟອກເລືອດດໍາໃຫ້ກາຍເປັນເລືອດແດງ?", choices: ["ປອດ","ຕັບ","ຫົວໃຈ","ໝາກໄຂ່ຫຼັງ"], answer:"ປອດ"},
+{ question:"ການເກີດໃໝ່ຂອງສິ່ງທີ່ມີຊີວິດທີ່ຍັງຮັກສາລັກສະນະພັນຂອງ ພໍ່, ແມ່ ເອີ້ນວ່າຫຍັງ?", choices: ["ການຂະຫຍາຍພັນ","ການເລືອກ ພໍ່, ແມ່ພັນ","ການປັບປຸງພັນ","ການສືບພັນ"], answer:"ການສືບພັນ"},
+{ question:"ຂໍ້ໃດແມ່ນສັດທີ່ມີກະດູກສັນຫຼັງທັງໝົດ?", choices: ["ງົວ, ຄວາຍ, ບົ້ງ","ງົວ, ຄວາຍ, ປູ","ງົວ, ຄວາຍ, ຊ້າງ","ງົວ, ປີງ, ຫອຍ"], answer:"ງົວ, ຄວາຍ, ຊ້າງ"},
+{ question:"ທາດເຄມີປະເພດໃດທີ່ຈັດເຂົ້າໃນຈໍາພວກບໍລິໂພກ?", choices: ["ນໍ້າຢາລ້າງຈານ","ນໍ້າອັດລົມ","ນໍ້າຫອມ","ນໍ້າມັນແອດຊັງ"], answer:"ນໍ້າອັດລົມ"},
+      ]
+    };
+
+    let currentUser = null;
+    let userLevels = { lao: 1, math: 1, sci: 1 };
+    let activeSubject = null;
+    let quizQuestions = [];
+    let userAnswers = new Array(30).fill(null);
+    let currentQIndex = 0;
+    let quizTimerInterval = null;
+    let secondsLeft = 300;
+    let activeLeaderboardTab = 'lao';
+    let pendingLoginId = null;
+    let cooldownInterval = null;
+    let activeWrongReportTab = 'lao';
+    let wrongReportCache = {};
+    let lastWrongReportViewed = null;
+    let currentWrongReportList = []; 
+    let currentWrongReportIndex = 0;
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[ch]);
+    }
+
+    function canonicalValue(value) {
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+          try { return JSON.stringify(JSON.parse(trimmed)); } catch (_) {}
+        }
+        return value.normalize ? value.normalize('NFC').trim() : value.trim();
+      }
+      if (typeof value === 'object') {
+        try { return JSON.stringify(value); } catch (_) { return String(value); }
+      }
+      return String(value);
+    }
+
+    function valuesMatch(a, b) {
+      return canonicalValue(a) === canonicalValue(b);
+    }
+
+    function highlightJson(jsonText) {
+      return String(jsonText).replace(
+        /("(?:\\.|[^"\\])*"(?=\s*:))|("(?:\\.|[^"\\])*")|\b(true|false)\b|\b(null)\b|(-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b)|([{}\[\],:])/g,
+        (match, key, str, bool, nil, num, punctuation) => {
+          if (key) return `<span class="json-key">${escapeHtml(key)}</span>`;
+          if (str) return `<span class="json-string">${escapeHtml(str)}</span>`;
+          if (bool) return `<span class="json-boolean">${bool}</span>`;
+          if (nil) return `<span class="json-null">${nil}</span>`;
+          if (num) return `<span class="json-number">${num}</span>`;
+          if (punctuation) return `<span class="json-punctuation">${punctuation}</span>`;
+          return escapeHtml(match);
+        }
+      );
+    }
+
+    function normalizeMathDelimiters(value) {
+      let text = String(value ?? '');
+      text = text.replace(/\\{2,}\(/g, '\\(').replace(/\\{2,}\)/g, '\\)');
+      return text;
+    }
+
+    function renderRichContent(value, extraClass = '') {
+      if (value !== null && typeof value === 'object') {
+        let pretty = '';
+        try { pretty = JSON.stringify(value, null, 2); } catch (_) { pretty = String(value); }
+        return `<div class="json-content-view ${extraClass}">
+          <div class="json-content-head"><i class="fa-solid fa-code"></i> JSON</div>
+          <pre><code>${highlightJson(pretty)}</code></pre>
+        </div>`;
+      }
+
+      let raw = value === null || value === undefined ? '' : String(value);
+      let trimmed = raw.trim();
+
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        try {
+          const decoded = JSON.parse(trimmed);
+          if (typeof decoded === 'string') {
+            raw = decoded;
+            trimmed = raw.trim();
+          }
+        } catch (_) {}
+      }
+
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          const pretty = JSON.stringify(parsed, null, 2);
+          return `<div class="json-content-view ${extraClass}">
+            <div class="json-content-head"><i class="fa-solid fa-code"></i> JSON</div>
+            <pre><code>${highlightJson(pretty)}</code></pre>
+          </div>`;
+        } catch (_) {}
+      }
+      return normalizeMathDelimiters(raw);
+    }
+
+    async function typesetMathIn(element) {
+      if (!element || !window.MathJax) return;
+      try {
+        if (window.MathJax.startup && window.MathJax.startup.promise) {
+          await window.MathJax.startup.promise;
+        }
+        if (typeof window.MathJax.typesetClear === 'function') {
+          window.MathJax.typesetClear([element]);
+        }
+        if (typeof window.MathJax.typesetPromise === 'function') {
+          await window.MathJax.typesetPromise([element]);
+        }
+      } catch (error) {
+        console.warn('MathJax rendering failed:', error);
+      }
+    }
+
+    function makeQuestionId(subject, questionText) {
+      let hash = 2166136261;
+      const source = `${subject}|${canonicalValue(questionText)}`;
+      for (let i = 0; i < source.length; i++) {
+        hash ^= source.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return 'q_' + (hash >>> 0).toString(16);
+    }
+
+    window.app = {
+      handleIdSubmit() {
+        const inputVal = document.getElementById('input-student-id').value.trim();
+        const idNum = parseInt(inputVal, 10);
+        if (!idNum || idNum < 1 || idNum > 17) {
+          alert('ກະລຸນາປ້ອນລະຫັດນັກຮຽນ 1 ເຖິງ 17 ໃຫ້ຖືກຕ້ອງ!');
+          return;
+        }
+        pendingLoginId = idNum;
+        const studentName = STUDENTS[idNum];
+        document.getElementById('confirm-student-name').innerText = `ຈະລົງຊື່ຜ່ານ ${studentName} ແມ່ນບໍ?`;
+        document.getElementById('modal-login-confirm').classList.remove('hidden');
+      },
+
+      cancelLoginModal() {
+        pendingLoginId = null;
+        document.getElementById('modal-login-confirm').classList.add('hidden');
+      },
+
+      async confirmStudentLogin() {
+        if (!pendingLoginId) return;
+        const tempUser = { id: pendingLoginId, name: STUDENTS[pendingLoginId], isGuest: false };
+        const isLocked = await this.checkCooldownStatusForUser(tempUser);
+        if (isLocked) {
+          document.getElementById('modal-login-confirm').classList.add('hidden');
+          pendingLoginId = null;
+          return;
+        }
+        currentUser = tempUser;
+        document.getElementById('modal-login-confirm').classList.add('hidden');
+        this.afterLoginSuccess();
+      },
+
+      loginAsGuest() {
+        const guestId = 'guest_' + Math.floor(Math.random() * 8999 + 1000);
+        currentUser = { id: guestId, name: '(Guest)', isGuest: true };
+        this.afterLoginSuccess();
+      },
+
+      async afterLoginSuccess() {
+        await this.loadUserData();
+        this.updateHeaderBadge();
+        this.showSubjects();
+      },
+
+      async loadUserData() {
+        if (!currentUser || currentUser.isGuest) {
+          userLevels = { lao: 1, math: 1, sci: 1 };
+          return;
+        }
+        try {
+          const userRef = ref(db, `students/id_${currentUser.id}`);
+          const snapshot = await get(userRef);
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            userLevels = { lao: data.laoLevel || 1, math: data.mathLevel || 1, sci: data.sciLevel || 1 };
+          } else {
+            userLevels = { lao: 1, math: 1, sci: 1 };
+            await set(userRef, { name: currentUser.name, id: currentUser.id, laoLevel: 1, mathLevel: 1, sciLevel: 1, cooldownUntil: 0 });
+          }
+        } catch (err) {
+          console.error("Firebase read error:", err);
+        }
+      },
+
+      async saveUserProgress(subject, newLevel) {
+        if (!currentUser || currentUser.isGuest) return;
+        userLevels[subject] = Math.min(newLevel, 5);
+        try {
+          const userRef = ref(db, `students/id_${currentUser.id}`);
+          await update(userRef, { [`${subject}Level`]: userLevels[subject] });
+        } catch (err) {
+          console.error("Firebase update error:", err);
+        }
+      },
+
+      updateHeaderBadge() {
+        if (!currentUser) {
+          document.getElementById('user-profile-badge').classList.add('hidden');
+          return;
+        }
+        document.getElementById('user-profile-badge').classList.remove('hidden');
+        document.getElementById('header-user-name').innerText = currentUser.name;
+        document.getElementById('header-user-level').innerText = `ລາວ: L${userLevels.lao} | ຄະນິດ: L${userLevels.math} | ວິທ: L${userLevels.sci}`;
+        
+        document.getElementById('modal-profile-name').innerText = currentUser.name;
+        document.getElementById('modal-profile-id').innerText = currentUser.isGuest ? 'ແຂກ' : `ID: ${currentUser.id}`;
+        const reportButton = document.getElementById('btn-open-wrong-report');
+        if (reportButton) reportButton.classList.toggle('hidden', !!currentUser.isGuest);
+        document.getElementById('prof-lvl-lao').innerText = `Level ${userLevels.lao}`;
+        document.getElementById('prof-lvl-math').innerText = `Level ${userLevels.math}`;
+        document.getElementById('prof-lvl-sci').innerText = `Level ${userLevels.sci}`;
+
+        document.getElementById('subj-level-lao').innerText = `Level ${userLevels.lao}`;
+        document.getElementById('subj-level-math').innerText = `Level ${userLevels.math}`;
+        document.getElementById('subj-level-sci').innerText = `Level ${userLevels.sci}`;
+      },
+
+      toggleProfileModal() {
+        document.getElementById('modal-profile').classList.toggle('hidden');
+      },
+
+      logout() {
+        currentUser = null;
+        userLevels = { lao: 1, math: 1, sci: 1 };
+        document.getElementById('modal-profile').classList.add('hidden');
+        this.updateHeaderBadge();
+        this.showHome();
+      },
+
+      hideAllScreens() {
+        document.getElementById('screen-home').classList.add('hidden');
+        document.getElementById('screen-subjects').classList.add('hidden');
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-leaderboard').classList.add('hidden');
+        document.getElementById('screen-wrong-report').classList.add('hidden');
+      },
+
+      showHome() {
+        this.clearIntervals();
+        this.hideAllScreens();
+        document.getElementById('screen-home').classList.remove('hidden');
+      },
+
+      showSubjects() {
+        if (!currentUser) {
+          this.showHome();
+          return;
+        }
+        this.clearIntervals();
+        this.hideAllScreens();
+        this.updateHeaderBadge();
+        document.getElementById('screen-subjects').classList.remove('hidden');
+      },
+
+      showHomeConfirm() {
+        showCustomConfirm("ທ່ານຕ້ອງການອອກຈາກໜ້າຕອບຄຳຖາມ ແລະ ກັບໜ້າທຳອິດບໍ?", () => this.showHome());
+      },
+
+      showSubjectConfirm() {
+        showCustomConfirm(
+          "ທ່ານຕ້ອງການອອກຈາກການຕອບຄຳຖາມ ແລະ ກັບໄປໜ້າເລືອກວິຊາບໍ?",
+          () => this.showSubjects(),
+          "ກັບໄປເລືອກວິຊາ",
+          "📚"
+        );
+      },
+
+      async startQuiz(subject) {
+        if (!currentUser) return;
+        const isLocked = await this.checkCooldownStatusForUser(currentUser);
+        if (isLocked) return;
+
+        activeSubject = subject;
+        this._submittingQuiz = false;
+        currentQIndex = 0;
+        userAnswers = new Array(30).fill(null);
+        // ຄະນິດສາດ 5 ນາທີ, ວິຊາອື່ນ 3 ນາທີ
+        secondsLeft = subject === 'math' ? 300 : 300;
+
+        const subjNames = { lao: "ພາສາລາວ", math: "ຄະນິດສາດ", sci: "ວິທະຍາສາດ" };
+        document.getElementById('quiz-subject-badge').innerText = subjNames[subject];
+        document.getElementById('quiz-level-indicator').innerText = `ລະດັບທີ ${userLevels[subject]} (Level ${userLevels[subject]})`;
+
+        const basePool = QUESTION_BANK[subject] || QUESTION_BANK['math'];
+        quizQuestions = [];
+
+        while (quizQuestions.length < 30) {
+          const shuffledPool = [...basePool].sort(() => Math.random() - 0.5);
+          for (let item of shuffledPool) {
+            const shuffledChoices = [...item.choices].sort(() => Math.random() - 0.5);
+            quizQuestions.push({
+              id: makeQuestionId(subject, item.question),
+              question: item.question,
+              choices: shuffledChoices,
+              answer: item.answer
+            });
+            if (quizQuestions.length >= 30) break;
+          }
+        }
+
+        this.hideAllScreens();
+        document.getElementById('screen-quiz').classList.remove('hidden');
+        this.startQuizTimer();
+        this.renderCurrentQuestion();
+      },
+
+      async checkCooldownStatusForUser(userObj) {
+        if (!userObj || userObj.isGuest) return false;
+        try {
+          const userRef = ref(db, `students/id_${userObj.id}`);
+          const snapshot = await get(userRef);
+          if (!snapshot.exists()) return false;
+          const data = snapshot.val() || {};
+          const cdUntil = Number(data.cooldownUntil || 0);
+          const now = Date.now();
+          if (cdUntil > now) {
+            const remainingSecs = Math.max(1, Math.ceil((cdUntil - now) / 1000));
+            this.triggerCooldownModal(`ນັກຮຽນລະຫັດ ${userObj.id} ຍັງຕິດ Cooldown ຢູ່!`, remainingSecs);
+            return true;
+          }
+          return false;
+        } catch (e) {
+          console.error("Cooldown check error:", e);
+          return true;
+        }
+      },
+
+      startQuizTimer() {
+        clearInterval(quizTimerInterval);
+        this.updateTimerDisplay();
+        quizTimerInterval = setInterval(() => {
+          secondsLeft--;
+          this.updateTimerDisplay();
+          if (secondsLeft <= 0) {
+            clearInterval(quizTimerInterval);
+            this.submitQuiz();
+          }
+        }, 1000);
+      },
+
+      updateTimerDisplay() {
+        const m = Math.floor(secondsLeft / 60);
+        const s = secondsLeft % 60;
+        document.getElementById('quiz-timer').innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      },
+
+      renderCurrentQuestion() {
+        const qData = quizQuestions[currentQIndex];
+        document.getElementById('current-q-num').innerText = currentQIndex + 1;
+        document.getElementById('question-text').innerHTML = renderRichContent(qData.question);
+
+        const container = document.getElementById('choices-container');
+        container.innerHTML = '';
+        const selectedAnswer = userAnswers[currentQIndex];
+
+        qData.choices.forEach((choiceText) => {
+          const isSelected = valuesMatch(selectedAnswer, choiceText);
+          const choiceBtn = document.createElement('button');
+          
+          choiceBtn.className = `btn-3d choice-btn-fixed text-left text-lg md:text-xl font-bold transition-all ${
+            isSelected ? 'choice-selected' : 'bg-slate-900 border-slate-800 hover:border-indigo-400'
+          }`;
+
+          choiceBtn.onclick = () => {
+            userAnswers[currentQIndex] = choiceText;
+            this.renderPaletteGrid();
+            setTimeout(() => {
+              if (currentQIndex < 29) {
+                currentQIndex++;
+                this.renderCurrentQuestion();
+              }
+            }, 150);
+          };
+
+          const choiceContent = document.createElement('div');
+          choiceContent.className = 'flex-grow min-w-0';
+          choiceContent.innerHTML = renderRichContent(choiceText);
+          
+          const radio = document.createElement('div');
+          radio.className = `w-7 h-7 rounded-full border-2 ${isSelected ? 'border-emerald-300 bg-emerald-400' : 'border-slate-600'} flex items-center justify-center flex-shrink-0`;
+          radio.innerHTML = `<i class="fa-solid fa-check text-slate-950 text-xs font-black ${isSelected ? '' : 'hidden'}"></i>`;
+          
+          choiceBtn.append(choiceContent, radio);
+          container.appendChild(choiceBtn);
+        });
+
+        this.renderPaletteGrid();
+        typesetMathIn(document.getElementById('screen-quiz'));
+      },
+
+      async submitQuiz() {
+        if (this._submittingQuiz) return;
+        this._submittingQuiz = true;
+
+        let hasWrong = false;
+        let hasUnanswered = false;
+        const wrongEntries = [];
+
+        for (let i = 0; i < 30; i++) {
+          if (userAnswers[i] === null) {
+            hasUnanswered = true;
+          } else if (userAnswers[i] !== quizQuestions[i].answer) {
+            hasWrong = true;
+            wrongEntries.push({
+              id: quizQuestions[i].id || makeQuestionId(activeSubject, quizQuestions[i].question),
+              question: quizQuestions[i].question,
+              choices: quizQuestions[i].choices,
+              correctAnswer: quizQuestions[i].answer,
+              selectedAnswer: userAnswers[i]
+            });
+          }
+        }
+
+        if (hasWrong || hasUnanswered) {
+          if (wrongEntries.length && currentUser && !currentUser.isGuest) {
+            try {
+              await Promise.all(wrongEntries.map(entry => this.saveWrongAnswerReport(entry)));
+            } catch (err) {
+              console.error('Wrong-answer report save failed:', err);
+            }
+          }
+          this.handleQuizFailure(hasWrong ? "ທ່ານຕອບຄຳຖາມຜິດ!" : "ທ່ານຕອບຄຳຖາມບໍ່ຄົບ 30 ຂໍ້!");
+        } else {
+          this.handleQuizVictory();
+        }
+        this._submittingQuiz = false;
+      },
+
+      async saveWrongAnswerReport(entry) {
+        if (!currentUser || currentUser.isGuest || !activeSubject) return;
+        const reportRef = ref(db, `students/id_${currentUser.id}/wrongReports/${activeSubject}/${entry.id}`);
+        await runTransaction(reportRef, currentData => {
+          if (currentData === null) {
+            return { questionId: entry.id, question: entry.question, choices: entry.choices, correctAnswer: entry.correctAnswer, lastWrongAnswer: entry.selectedAnswer, count: 1, updatedAt: Date.now() };
+          }
+          return { ...currentData, questionId: entry.id, question: entry.question, choices: entry.choices, correctAnswer: entry.correctAnswer, lastWrongAnswer: entry.selectedAnswer, count: Number(currentData.count || 0) + 1, updatedAt: Date.now() };
+        });
+      },
+
+      async showWrongReport() {
+        if (!currentUser || currentUser.isGuest) return;
+        document.getElementById('modal-profile').classList.add('hidden');
+        this.clearIntervals();
+        this.hideAllScreens();
+        document.getElementById('screen-wrong-report').classList.remove('hidden');
+        document.getElementById('wrong-report-user').innerText = `${currentUser.name} · ID: ${currentUser.id}`;
+        document.getElementById('wrong-report-detail').classList.add('hidden');
+        await this.switchWrongReportTab(activeWrongReportTab);
+      },
+
+      async switchWrongReportTab(subject) {
+        activeWrongReportTab = subject;
+        ['lao', 'math', 'sci'].forEach(key => {
+          const button = document.getElementById(`wrong-tab-${key}`);
+          button.className = key === subject ? 'py-2 px-4 rounded-xl text-sm font-bold bg-emerald-600 text-white' : 'py-2 px-4 rounded-xl text-sm font-bold bg-slate-800 text-slate-300';
+        });
+
+        const list = document.getElementById('wrong-report-list');
+        list.innerHTML = '<div class="text-center text-slate-400 py-8">ກຳລັງໂຫຼດ...</div>';
+
+        try {
+          const reportRef = ref(db, `students/id_${currentUser.id}/wrongReports/${subject}`);
+          const snapshot = await get(reportRef);
+          const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+          const rows = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) })).sort((a, b) => Number(b.count || 0) - Number(a.count || 0));
+
+          wrongReportCache[subject] = rows;
+          currentWrongReportList = rows;
+
+          document.getElementById('wrong-report-total').innerText = `${rows.length} ຂໍ້`;
+
+          if (!rows.length) {
+            list.innerHTML = `<div class="text-center text-slate-400 py-10">ຍັງບໍ່ມີປະຫວັດຂໍ້ທີ່ຕອບຜິດ</div>`;
+            return;
+          }
+
+          list.innerHTML = '';
+          rows.forEach((row, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.reportId = row.id;
+            const isLastViewed = lastWrongReportViewed && lastWrongReportViewed.subject === subject && lastWrongReportViewed.id === row.id;
+            button.className = `wrong-report-row w-full rounded-xl p-3 flex items-center gap-3 text-left hover:border-rose-400/60 transition ${isLastViewed ? 'wrong-report-recent' : ''}`;
+            
+            const rank = document.createElement('span');
+            rank.className = 'w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center text-sm font-black flex-shrink-0';
+            rank.innerText = String(index + 1);
+
+            const body = document.createElement('span');
+            body.className = 'min-w-0 flex-1';
+            const question = document.createElement('div');
+            question.className = 'block text-sm font-bold text-white break-words min-w-0';
+            question.innerHTML = renderRichContent(row.question || '');
+            body.append(question);
+
+            const count = document.createElement('span');
+            count.className = 'text-xs font-black text-rose-300 bg-rose-500/15 rounded-full px-3 py-1 whitespace-nowrap';
+            count.textContent = `ຜິດ ${Number(row.count || 0)} ຄັ້ງ`;
+
+            button.append(rank, body, count);
+            button.addEventListener('click', () => this.showWrongReportDetailByIndex(index));
+            list.appendChild(button);
+          });
+          typesetMathIn(list);
+        } catch (err) {
+          console.error(err);
+        }
+      },
+
+      showWrongReportDetailByIndex(index) {
+        if (index < 0 || index >= currentWrongReportList.length) return;
+        currentWrongReportIndex = index;
+        const row = currentWrongReportList[index];
+        this.renderWrongReportDetailModal(row);
+      },
+
+      showWrongReportDetail(row) {
+        if (!Array.isArray(currentWrongReportList) || currentWrongReportList.length === 0) {
+          currentWrongReportList = wrongReportCache[activeWrongReportTab] || [];
+        }
+        const foundIndex = currentWrongReportList.findIndex(r => r.id === row.id);
+        if (foundIndex !== -1) {
+          currentWrongReportIndex = foundIndex;
+        }
+        this.renderWrongReportDetailModal(row);
+      },
+
+      renderWrongReportDetailModal(row) {
+        lastWrongReportViewed = { subject: activeWrongReportTab, id: row.id };
+        const countEl = document.getElementById('wrong-detail-count');
+        if (countEl) countEl.innerText = `ຜິດ ${Number(row.count || 0)} ຄັ້ງ`;
+        
+        const indicator = document.getElementById('wrong-detail-pagination-indicator');
+        if (indicator) {
+          indicator.innerText = `${currentWrongReportIndex + 1} / ${currentWrongReportList.length}`;
+        }
+
+        const qEl = document.getElementById('wrong-detail-question');
+        if (qEl) qEl.innerHTML = renderRichContent(row.question || '');
+
+        const choices = document.getElementById('wrong-detail-choices');
+        if (choices) {
+          choices.innerHTML = '';
+          (Array.isArray(row.choices) ? row.choices : []).forEach((choice) => {
+            const isCorrect = valuesMatch(choice, row.correctAnswer);
+            const option = document.createElement('div');
+            option.className = `w-full text-left p-4 rounded-2xl border-2 font-bold transition-all flex items-center justify-between gap-3 ${isCorrect ? 'wrong-report-correct' : 'bg-slate-900 border-slate-800 text-slate-300'}`;
+            
+            const label = document.createElement('div');
+            label.className = 'flex-grow text-base md:text-lg break-words min-w-0';
+            label.innerHTML = renderRichContent(choice);
+            
+            option.append(label);
+            choices.appendChild(option);
+          });
+        }
+
+        const detail = document.getElementById('wrong-report-detail');
+        if (detail) {
+          detail.classList.remove('hidden');
+          detail.classList.add('flex');
+          typesetMathIn(detail);
+        }
+
+        this.highlightActiveWrongReportRow(row.id);
+      },
+
+      prevWrongReport() {
+        if (currentWrongReportIndex > 0) {
+          this.showWrongReportDetailByIndex(currentWrongReportIndex - 1);
+        }
+      },
+
+      nextWrongReport() {
+        if (currentWrongReportIndex < currentWrongReportList.length - 1) {
+          this.showWrongReportDetailByIndex(currentWrongReportIndex + 1);
+        }
+      },
+
+      highlightActiveWrongReportRow(id) {
+        document.querySelectorAll('.wrong-report-row').forEach(el => {
+          if (el.dataset.reportId === id) {
+            el.classList.add('wrong-report-recent');
+          } else {
+            el.classList.remove('wrong-report-recent');
+          }
+        });
+      },
+
+      closeWrongReportDetail() {
+        const detail = document.getElementById('wrong-report-detail');
+        if (detail) {
+          detail.classList.add('hidden');
+          detail.classList.remove('flex');
+        }
+      },
+
+      jumpToQuestion(index) {
+        if (index >= 0 && index < 30) {
+          currentQIndex = index;
+          this.renderCurrentQuestion();
+        }
+      },
+
+      prevQuestion() {
+        if (currentQIndex > 0) { currentQIndex--; this.renderCurrentQuestion(); }
+      },
+
+      nextQuestion() {
+        if (currentQIndex < 29) { currentQIndex++; this.renderCurrentQuestion(); }
+      },
+
+      renderPaletteGrid() {
+        const grid = document.getElementById('question-palette-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        for (let i = 0; i < 30; i++) {
+          const btn = document.createElement('button');
+          const isAnswered = userAnswers[i] !== null;
+          const isCurrent = i === currentQIndex;
+          let btnStyle = "bg-slate-800 text-slate-400 border-slate-700";
+          if (isAnswered) btnStyle = "bg-emerald-600 text-white font-black border-emerald-400";
+          if (isCurrent) btnStyle += " ring-2 ring-indigo-400 scale-105";
+
+          btn.className = `h-9 rounded-xl border text-xs font-bold transition flex items-center justify-center ${btnStyle}`;
+          btn.innerText = i + 1;
+          btn.onclick = () => this.jumpToQuestion(i);
+          grid.appendChild(btn);
+        }
+      },
+
+      async handleQuizFailure(reason) {
+        this.clearIntervals();
+        if (currentUser && !currentUser.isGuest) {
+          try {
+            const userRef = ref(db, `students/id_${currentUser.id}`);
+            await update(userRef, { cooldownUntil: Date.now() + 180000 });
+          } catch (e) { console.error(e); }
+        }
+        this.triggerCooldownModal(reason, 180);
+      },
+
+      triggerCooldownModal(reason, totalSeconds) {
+        document.getElementById('gameover-reason-text').innerText = reason;
+        document.getElementById('modal-gameover').classList.remove('hidden');
+        let cdSecs = totalSeconds;
+        const cdDisplay = document.getElementById('cooldown-timer-display');
+        clearInterval(cooldownInterval);
+        cooldownInterval = setInterval(() => {
+          cdSecs--;
+          if (cdSecs <= 0) {
+            clearInterval(cooldownInterval);
+            cdDisplay.innerText = "00:00 - ພ້ອມຫຼິ້ນແລ້ວ!";
+          } else {
+            const m = Math.floor(cdSecs / 60);
+            const s = cdSecs % 60;
+            cdDisplay.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          }
+        }, 1000);
+      },
+
+      closeGameOverModal() {
+        document.getElementById('modal-gameover').classList.add('hidden');
+        clearInterval(cooldownInterval);
+        this.showHome();
+      },
+
+      async handleQuizVictory() {
+        this.clearIntervals();
+        const currentLvl = userLevels[activeSubject];
+        document.getElementById('victory-title').innerText = `ຍິນດີນຳເດີ້ ເຈົ້າຜ່ານລະດັບທີ ${currentLvl} ສຳເລັດແລ້ວ!`;
+        if (window.confetti) confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        if (currentLvl < 5) {
+          await this.saveUserProgress(activeSubject, currentLvl + 1);
+          document.getElementById('btn-next-level').classList.remove('hidden');
+        } else {
+          document.getElementById('btn-next-level').classList.add('hidden');
+        }
+        document.getElementById('modal-victory').classList.remove('hidden');
+      },
+
+      nextLevelAction() {
+        document.getElementById('modal-victory').classList.add('hidden');
+        this.startQuiz(activeSubject);
+      },
+
+      clearIntervals() {
+        if (quizTimerInterval) clearInterval(quizTimerInterval);
+        if (cooldownInterval) clearInterval(cooldownInterval);
+      },
+
+      async showLeaderboard() {
+        this.hideAllScreens();
+        document.getElementById('screen-leaderboard').classList.remove('hidden');
+        await this.switchLeaderboardTab(activeLeaderboardTab);
+      },
+
+      async switchLeaderboardTab(subjectKey) {
+        activeLeaderboardTab = subjectKey;
+        ['lao', 'math', 'sci'].forEach(key => {
+          const btn = document.getElementById(`tab-btn-${key}`);
+          btn.className = key === subjectKey ? "py-2.5 px-4 font-bold text-sm text-amber-400 border-b-2 border-amber-400 transition" : "py-2.5 px-4 font-bold text-sm text-slate-400 hover:text-white border-b-2 border-transparent transition";
+        });
+
+        const tbody = document.getElementById('leaderboard-tbody');
+        tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-slate-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</td></tr>`;
+
+        try {
+          const snapshot = await get(ref(db, 'students'));
+          let studentList = [];
+          for (let id = 1; id <= 17; id++) {
+            studentList.push({ id, name: STUDENTS[id], level: 1 });
+          }
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            studentList = studentList.map(s => {
+              const record = data[`id_${s.id}`];
+              return { ...s, level: record ? (record[`${subjectKey}Level`] || 1) : 1 };
+            });
+          }
+          studentList.sort((a, b) => b.level - a.level || a.id - b.id);
+
+          tbody.innerHTML = '';
+          let currentRank = 1;
+          studentList.forEach((st, idx) => {
+            if (idx > 0 && st.level < studentList[idx - 1].level) currentRank = idx + 1;
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-900/50 transition";
+            tr.innerHTML = `
+              <td class="py-3 px-4 font-bold text-slate-400">${currentRank}</td>
+              <td class="py-3 px-4 font-bold text-slate-200"><span class="text-xs text-amber-400 mr-1.5">[${st.id}]</span>${st.name}</td>
+              <td class="py-3 px-4 text-center font-black text-amber-400">Level ${st.level}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-rose-400">ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້</td></tr>`;
+        }
+      }
+    };
+
+function showCustomConfirm(message, onConfirm, title = "ຢືນຢັນການອອກ", icon = "❓") {
+    const modal = document.getElementById('custom-confirm');
+
+    document.getElementById('modal-title').textContent = title;
+    document.querySelector('#custom-confirm .modal-icon').textContent = icon;
+    document.getElementById('modal-message').textContent = message;
+
+    const okButton = document.getElementById('modal-ok');
+    const cancelButton = document.getElementById('modal-cancel');
+
+    // ສະຫຼັບຂໍ້ຄວາມປຸ່ມ
+    okButton.textContent = "ຕົກລົງ";
+    cancelButton.textContent = "ຍົກເລີກ";
+
+    modal.classList.add('show');
+
+    // ປຸ່ມຕົກລົງ
+    okButton.onclick = () => {
+        modal.classList.remove('show');
+        onConfirm();
+    };
+
+    // ປຸ່ມຍົກເລີກ
+    cancelButton.onclick = () => {
+        modal.classList.remove('show');
+    };
+}
+  </script>
+</body>
+</html>
