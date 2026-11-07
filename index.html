@@ -438,6 +438,52 @@ font-size: 32px;
 .choice-btn-fixed .choice-label {
     font-size: 23px !important;
 }
+
+/* ปรับขนาดตัวหนังสือสำหรับมือถือ */
+@media (max-width: 640px) {
+
+    /* ตัวโจทย์คำถาม */
+    .question-box-fixed {
+        font-size: 20px !important;
+        padding: 14px 12px !important;
+        min-height: 100px !important;
+        line-height: 1.5 !important;
+    }
+
+    #question-text {
+        font-size: 20px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* ตัวเลือกคำตอบ */
+    .choice-btn-fixed {
+        font-size: 17px !important;
+        line-height: 1.5 !important;
+        padding: 12px 14px !important;
+        gap: 8px !important;
+    }
+
+    .choice-btn-fixed span,
+    .choice-btn-fixed div,
+    .choice-btn-fixed p,
+    .choice-btn-fixed .choice-label {
+        font-size: 17px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* สูตรคณิตศาสตร์ */
+    .question-box-fixed mjx-container,
+    .choice-btn-fixed mjx-container {
+        font-size: 85% !important;
+    }
+
+    /* ลดช่องว่างระหว่างโจทย์กับตัวเลือก */
+    #screen-quiz > .card-3d {
+        padding: 12px !important;
+    }
+
+}
+
   </style>
 </head>
 <body class="flex flex-col min-h-screen justify-between overflow-x-hidden">
