@@ -1792,7 +1792,7 @@ document.getElementById('screen-diligence').classList.add('hidden');
 
         qData.choices.forEach((choiceText) => {
           const isSelected = valuesMatch(selectedAnswer, choiceText);
-          const choiceBtn = document.createElement('button');
+const choiceBtn = document.createElement('button');
           
           choiceBtn.className = `btn-3d choice-btn-fixed text-left text-lg md:text-xl font-bold transition-all ${
             isSelected ? 'choice-selected' : 'bg-slate-900 border-slate-800 hover:border-indigo-400'
@@ -1800,25 +1800,28 @@ document.getElementById('screen-diligence').classList.add('hidden');
 
           choiceBtn.onclick = () => {
             userAnswers[currentQIndex] = choiceText;
+            
+            // อัปเดตตารางสีเขียวและหน้าจอทันทีแบบไม่มีดีເລ
             this.renderPaletteGrid();
-            setTimeout(() => {
-              if (currentQIndex < 29) {
-                currentQIndex++;
-                this.renderCurrentQuestion();
-              }
-            }, 150);
+            this.renderCurrentQuestion();
+
+            // เปลี่ยนไปข้อถัดไปทันที (ถ้าไม่ใช่ข้อสุดท้าย)
+            if (currentQIndex < 29) {
+              currentQIndex++;
+              this.renderCurrentQuestion();
+            }
           };
 
           const choiceContent = document.createElement('div');
           choiceContent.className = 'flex-grow min-w-0';
           choiceContent.innerHTML = renderRichContent(choiceText);
           
-          const radio = document.createElement('div');
-          radio.className = `w-7 h-7 rounded-full border-2 ${isSelected ? 'border-emerald-300 bg-emerald-400' : 'border-slate-600'} flex items-center justify-center flex-shrink-0`;
-          radio.innerHTML = `<i class="fa-solid fa-check text-slate-950 text-xs font-black ${isSelected ? '' : 'hidden'}"></i>`;
+          // ❌ ✂️ ตัดส่วนของวงกลມ (radio) และเครื่องໝາຍติกถูกออก ไม่ต้องใส่เข้าไปในปุ่ม
           
-          choiceBtn.append(choiceContent, radio);
+          choiceBtn.append(choiceContent);
           container.appendChild(choiceBtn);
+          
+
         });
 
         this.renderPaletteGrid();
