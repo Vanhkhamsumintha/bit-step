@@ -518,6 +518,10 @@ font-size: 32px;
           <i class="fa-solid fa-trophy text-amber-400"></i>
           <span class="hidden sm:inline">ຕາຕະລາງອັນດັບ</span>
         </button>
+<button onclick="app.showDiligence()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-emerald-400 font-bold text-sm flex items-center gap-2 transition">
+    <i class="fa-solid fa-calendar-check"></i>
+    <span>ຄວາມຂະຫຍັນ</span>
+</button>
       </div>
     </div>
   </header>
@@ -751,7 +755,70 @@ font-size: 32px;
         </div>
       </div>
     </section>
+<!-- DILIGENCE SCREEN -->
+<section id="screen-diligence" class="w-full max-w-4xl space-y-6 hidden">
 
+    <div class="card-3d rounded-3xl p-6 border-t-2 border-emerald-500/50">
+
+        <div class="flex items-center justify-between gap-3 mb-6">
+
+            <div class="flex items-center gap-3">
+
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-black text-white">
+                        ຄວາມຂະຫຍັນ
+                    </h2>
+
+                    <p class="text-xs text-slate-400">
+                        ປະຫວັດການເຂົ້າໃຊ້ຂອງນັກຮຽນ
+                    </p>
+                </div>
+
+            </div>
+
+            <button onclick="app.showHome()"
+                class="btn-3d btn-3d-blue text-xs font-bold py-2 px-4 rounded-xl">
+                <i class="fa-solid fa-arrow-left"></i>
+                ກັບຄືນ
+            </button>
+
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full text-left text-sm">
+
+                <thead>
+                    <tr class="bg-slate-950/70 text-slate-400 border-b border-slate-800">
+                        <th class="p-3">ລຳດັບ</th>
+                        <th class="p-3">ນັກຮຽນ</th>
+                        <th class="p-3 text-center">ຈຳນວນຄັ້ງ</th>
+                        <th class="p-3">ເຂົ້າໃຊ້ລ່າສຸດ</th>
+                    </tr>
+                </thead>
+
+                <tbody id="diligence-tbody"
+                    class="divide-y divide-slate-800">
+
+                    <tr>
+                        <td colspan="4" class="p-6 text-center text-slate-400">
+                            ກຳລັງໂຫຼດ...
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
     <!-- 5. WRONG ANSWER REPORT SCREEN -->
     <section id="screen-wrong-report" class="w-full max-w-3xl space-y-6 hidden">
       <div class="card-3d rounded-3xl p-5 md:p-6 border-t-2 border-rose-500/50">
@@ -1479,19 +1546,49 @@ font-size: 32px;
         document.getElementById('modal-login-confirm').classList.add('hidden');
       },
 
-      async confirmStudentLogin() {
-        if (!pendingLoginId) return;
-        const tempUser = { id: pendingLoginId, name: STUDENTS[pendingLoginId], isGuest: false };
-        const isLocked = await this.checkCooldownStatusForUser(tempUser);
-        if (isLocked) {
-          document.getElementById('modal-login-confirm').classList.add('hidden');
-          pendingLoginId = null;
-          return;
-        }
-        currentUser = tempUser;
+async confirmStudentLogin() {
+    if (!pendingLoginId) return;
+
+    const tempUser = {
+        id: pendingLoginId,
+        name: STUDENTS[pendingLoginId],
+        isGuest: false
+    };
+
+    const isLocked = await this.checkCooldownStatusForUser(tempUser);
+
+    if (isLocked) {
         document.getElementById('modal-login-confirm').classList.add('hidden');
-        this.afterLoginSuccess();
-      },
+        pendingLoginId = null;
+        return;
+    }
+
+    // ==================================
+    // ບັນທຶກປະຫວັດການເຂົ້າໃຊ້
+    // ==================================
+    try {
+        const loginRef = ref(db, `students/id_${tempUser.id}`);
+        const snapshot = await get(loginRef);
+
+        const oldData = snapshot.exists() ? snapshot.val() : {};
+
+        const loginCount = Number(oldData.loginCount || 0) + 1;
+
+        await update(loginRef, {
+            loginCount: loginCount,
+            lastLoginAt: Date.now()
+        });
+
+    } catch (error) {
+        console.error("Login history error:", error);
+    }
+
+    currentUser = tempUser;
+
+    document.getElementById('modal-login-confirm').classList.add('hidden');
+
+    await this.afterLoginSuccess();
+},
 
       loginAsGuest() {
         const guestId = 'guest_' + Math.floor(Math.random() * 8999 + 1000);
@@ -1576,6 +1673,7 @@ font-size: 32px;
         document.getElementById('screen-quiz').classList.add('hidden');
         document.getElementById('screen-leaderboard').classList.add('hidden');
         document.getElementById('screen-wrong-report').classList.add('hidden');
+document.getElementById('screen-diligence').classList.add('hidden');
       },
 
       showHome() {
@@ -2031,7 +2129,103 @@ font-size: 32px;
         if (quizTimerInterval) clearInterval(quizTimerInterval);
         if (cooldownInterval) clearInterval(cooldownInterval);
       },
+// ========================================
+// ໜ້າຄວາມຂະຫຍັນ
+// ========================================
 
+async showDiligence() {
+
+    this.clearIntervals();
+    this.hideAllScreens();
+
+    document.getElementById('screen-diligence')
+        .classList.remove('hidden');
+
+    const tbody = document.getElementById('diligence-tbody');
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="4" class="p-6 text-center text-slate-400">
+                ກຳລັງໂຫຼດ...
+            </td>
+        </tr>
+    `;
+
+    try {
+
+        const snapshot = await get(ref(db, 'students'));
+
+        const data = snapshot.exists()
+            ? snapshot.val()
+            : {};
+
+        const rows = [];
+
+        // แสดงนักเรียนทั้งหมด 17 คน
+        for (let id = 1; id <= 17; id++) {
+
+            const student = data[`id_${id}`] || {};
+
+            rows.push({
+                id: id,
+                name: STUDENTS[id],
+                count: Number(student.loginCount || 0),
+                lastLoginAt: Number(student.lastLoginAt || 0)
+            });
+
+        }
+
+        // เรียงจำนวนครั้งจากมากไปน้อย
+        rows.sort((a, b) => b.count - a.count);
+
+        tbody.innerHTML = rows.map((student, index) => {
+
+            const lastLogin = student.lastLoginAt
+                ? new Date(student.lastLoginAt).toLocaleString('lo-LA')
+                : 'ຍັງບໍ່ເຄີຍເຂົ້າໃຊ້';
+
+            return `
+                <tr class="hover:bg-slate-800/50">
+
+                    <td class="p-3 text-emerald-400 font-bold">
+                        ${index + 1}
+                    </td>
+
+                    <td class="p-3 text-white font-bold">
+                        ${student.name}
+                        <div class="text-xs text-slate-500">
+                            ID: ${student.id}
+                        </div>
+                    </td>
+
+                    <td class="p-3 text-center text-amber-400 font-black">
+                        ${student.count} ຄັ້ງ
+                    </td>
+
+                    <td class="p-3 text-slate-300 text-xs">
+                        ${lastLogin}
+                    </td>
+
+                </tr>
+            `;
+
+        }).join('');
+
+    } catch (error) {
+
+        console.error("Diligence error:", error);
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="p-6 text-center text-red-400">
+                    ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ
+                </td>
+            </tr>
+        `;
+
+    }
+
+},
       async showLeaderboard() {
         this.hideAllScreens();
         document.getElementById('screen-leaderboard').classList.remove('hidden');
